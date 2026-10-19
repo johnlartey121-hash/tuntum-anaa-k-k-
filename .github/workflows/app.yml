@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -56,6 +56,11 @@ jobs:
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk Tuntum.apk
       - uses: actions/upload-artifact@v4
         with: { name: Tuntum-Android, path: App/Tuntum.apk }
+      - name: Publish the APK at a public download link
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title "Latest game build" --notes "Tap Tuntum.apk to download the Android app."
+          gh release upload latest Tuntum.apk --clobber
 
   ios:
     name: iOS
