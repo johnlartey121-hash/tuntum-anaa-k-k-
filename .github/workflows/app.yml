@@ -114,9 +114,8 @@ jobs:
         working-directory: App
         run: |
           gh release view latest >/dev/null 2>&1 || gh release create latest --title "Latest game build" --notes "Game downloads."
-          gh release upload latest iphone-sim-home.png iphone-sim.mp4 Tuntum-iOS-unsigned.ipa --clobber
-      - name: Keep the Xcode project
-        run: zip -qr Tuntum-iOS-Xcode-project.zip ios -x 'ios/App/build/*' 'ios/App/build-device/*' 'ios/App/Pods/*'
+          (cd .. && zip -qr App/Tuntum-iOS-Xcode-project.zip App/ios App/www App/capacitor.config.json -x 'App/ios/App/build/*' 'App/ios/App/build-device/*' 'App/ios/App/Payload/*')
+          gh release upload latest iphone-sim-home.png iphone-sim.mp4 Tuntum-iOS-unsigned.ipa Tuntum-iOS-Xcode-project.zip --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: Tuntum-iOS
