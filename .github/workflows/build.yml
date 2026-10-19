@@ -1,0 +1,152 @@
+name: Build game
+
+# Builds the web game, Android (.apk to test, .aab for Google Play) and the iOS Xcode project
+# every time main changes. Needs the Unity secrets described in README.md ("Cloud builds").
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  check:
+    name: Check secrets
+    runs-on: ubuntu-latest
+    outputs:
+      unity: ${{ steps.s.outputs.unity }}
+      android_key: ${{ steps.s.outputs.android_key }}
+    steps:
+      - id: s
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$UNITY_LICENSE$UNITY_SERIAL" ]; then echo "unity=true" >> "$GITHUB_OUTPUT"; else echo "unity=false" >> "$GITHUB_OUTPUT"; echo "::warning::No Unity license secret yet, so only the server tests run. See README.md > Cloud builds."; fi
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then echo "android_key=true" >> "$GITHUB_OUTPUT"; else echo "android_key=false" >> "$GITHUB_OUTPUT"; fi
+
+  server-tests:
+    name: Server tests
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: Server } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+
+  unity-tests:
+    name: Game rule tests
+    needs: check
+    if: needs.check.outputs.unity == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-test-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-test-
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: [check, unity-tests]
+    if: needs.check.outputs.unity == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Web, target: WebGL, export: '' }
+          - { name: Android APK, target: Android, export: androidPackage }
+          - { name: Android App Bundle, target: Android, export: androidAppBundle }
+          - { name: iOS Xcode project, target: iOS, export: '' }
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true, fetch-depth: 0 }
+      - name: Free disk space (Android needs room)
+        if: matrix.target == 'Android'
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with: { tool-cache: false, android: false }
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ matrix.target }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-${{ matrix.target }}-
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          targetPlatform: ${{ matrix.target }}
+          buildName: Tuntum
+          versioning: Semantic
+          androidExportType: ${{ matrix.export || 'androidPackage' }}
+          androidKeystoreName: tuntum.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuntum-${{ matrix.name }}
+          path: build/${{ matrix.target }}
+          retention-days: 14
+
+  web-deploy:
+    name: Publish web game (GitHub Pages)
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true   # Pages must be switched on in the repo settings first
+    environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: Tuntum-Web, path: web }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: web/Tuntum }
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  ios-ipa:
+    name: iOS app (.ipa for TestFlight)
+    needs: build
+    runs-on: macos-14
+    env:
+      HAS_APPLE: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 != '' }}
+    steps:
+      - name: Skip without Apple signing secrets
+        if: env.HAS_APPLE != 'true'
+        run: echo "::notice::No Apple signing secrets yet. Download the 'Tuntum-iOS Xcode project' artifact, or add the secrets in README.md to get a TestFlight build."
+      - uses: actions/checkout@v4
+        if: env.HAS_APPLE == 'true'
+      - uses: actions/download-artifact@v4
+        if: env.HAS_APPLE == 'true'
+        with: { name: Tuntum-iOS Xcode project, path: build/iOS }
+      - name: Sign, archive and upload to TestFlight
+        if: env.HAS_APPLE == 'true'
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_P8_BASE64 }}
+        run: bash Tools/ios-testflight.sh build/iOS/Tuntum

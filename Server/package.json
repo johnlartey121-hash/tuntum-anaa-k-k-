@@ -1,0 +1,16 @@
+{
+  "name": "tuntum-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Room server for Tuntum anaa Kɔkɔɔ online play",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}

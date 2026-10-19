@@ -1,0 +1,25 @@
+name: Deploy online server
+
+# Puts the room server on Fly.io when Server/ changes. Needs the FLY_API_TOKEN secret (README.md > Online server).
+on:
+  push:
+    branches: [main]
+    paths: ['Server/**', '.github/workflows/server.yml']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip without a Fly token
+        if: env.FLY_API_TOKEN == ''
+        run: echo "::notice::No FLY_API_TOKEN secret yet; the server was not deployed."
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: env.FLY_API_TOKEN != ''
+      - name: Deploy
+        if: env.FLY_API_TOKEN != ''
+        working-directory: Server
+        run: flyctl deploy --remote-only
