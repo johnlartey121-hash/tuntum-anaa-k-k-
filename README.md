@@ -7,6 +7,8 @@ Unity game for **web, Android and iOS**, in the "Pop Party" look: sunny yellow, 
 
 - **Play vs Computer**: the computer counts the colours already drawn and usually calls the colour with more cards left. It slips sometimes.
 - **Pass & Play**: two players share one phone.
+- **Play Nearby (no internet)**: up to 4 phones on one phone's hotspot. The host taps Host, friends join the hotspot and tap Join. Android and iPhone together.
+- **2 to 4 players** in every mode except Play Online (2).
 - **Play Online**: one player creates a room and gets a 4-letter code; a friend joins with it. The server shuffles and decides every guess, so nobody can cheat.
 - Card animations: deal from the deck, lift-and-flip, fly into the score box (right) or shake and spin onto the misses pile (wrong).
 - Sound effects, all synthesised in code: deal swish, flip snap, a chime that climbs with the streak, buzzer, whoosh, fanfares.

@@ -182,6 +182,23 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
 /* small streak celebration */
 .burst{position:fixed;left:0;top:0;z-index:35;pointer-events:none;font:22px var(--suit);-webkit-text-stroke:1px var(--ink)}
 .ribbon{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);z-index:4;white-space:nowrap;background:var(--mint);border:3px solid var(--ink);border-radius:30px;padding:3px 12px;font:400 16px var(--display);letter-spacing:.5px;box-shadow:3px 3px 0 var(--ink);pointer-events:none}
+.count{display:flex;align-items:center;justify-content:center;gap:8px;font:800 13px var(--body);letter-spacing:1px}
+.count button{width:44px;height:38px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font:400 20px var(--display);box-shadow:0 3px 0 var(--ink)}
+.count button.on{background:var(--ink);color:var(--paper)}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.names label[hidden]{display:none}
+.b-mint{background:var(--mint)}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.players.n3 .pl,.players.n4 .pl{padding:6px 8px;gap:7px;border-radius:15px}
+.players.n3 .av,.players.n4 .av{width:32px;height:32px;font-size:14px}
+.players.n3 .sc,.players.n4 .sc{font-size:26px}
+.players.n3 .pn b,.players.n4 .pn b{font-size:13px}
+.lobby{display:flex;flex-direction:column;gap:8px}
+.lobby div{display:flex;align-items:center;gap:10px;font:800 16px var(--body)}
+.lobby .av{width:34px;height:34px;font-size:15px}
+.lobby .empty-seat{opacity:.4}
+.lobby .empty-seat .av{background:transparent;border-style:dashed}
+.hint{font:600 13px/1.4 var(--body);opacity:.75}
 @media (max-height:640px){:root{--ch:min(25vh,200px)}.rules{display:none}}
 @media (prefers-reduced-motion:reduce){.logo .lc,#rays,#streak.hot{animation:none!important}}
 </style>
@@ -197,12 +214,18 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
     <h1>Tuntum<span class="and">ANAA</span><span class="r">Kɔkɔɔ</span></h1>
     <p class="tag">Black or red? Call the next card.</p>
   </div>
+  <div class="count" role="group" aria-label="Number of players">PLAYERS
+    <button data-n="2" class="on">2</button><button data-n="3">3</button><button data-n="4">4</button>
+  </div>
   <div class="names">
     <label for="n1">PLAYER 1<input id="n1" maxlength="10" value="Ama" autocomplete="off"></label>
     <label for="n2">PLAYER 2<input id="n2" maxlength="10" value="Kofi" autocomplete="off"></label>
+    <label for="n3" hidden>PLAYER 3<input id="n3" maxlength="10" value="Esi" autocomplete="off"></label>
+    <label for="n4" hidden>PLAYER 4<input id="n4" maxlength="10" value="Yaw" autocomplete="off"></label>
   </div>
   <div class="modes">
     <button class="btn b-red" id="playCpu">▶&nbsp; Play vs Computer</button>
+    <button class="btn b-mint" id="playNearby">Play Nearby (no internet)</button>
     <button class="btn b-blue" id="playOnline">Play Online</button>
     <button class="btn b-white" id="playPass">Pass &amp; Play</button>
   </div>
@@ -233,16 +256,39 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
   <p class="note" id="onNote">Connecting…</p>
 </section>
 
+<section id="nearby" hidden>
+  <div class="top"><button class="round" id="nbBack" aria-label="Back to home">✕</button></div>
+  <h2>Play Nearby</h2>
+  <p class="hint" style="text-align:center">Up to 4 phones, no internet needed. Android and iPhone can play together.</p>
+  <div class="panel" id="nbHostPanel">
+    <h3>HOST A GAME</h3>
+    <p>1. Turn on your phone's <b>hotspot</b> (Settings → Hotspot). No data is used.<br>2. Tap Host. Friends join your hotspot, then tap Join.</p>
+    <button class="btn b-mint" id="nbHost">Host</button>
+  </div>
+  <div class="panel" id="nbWaitPanel" hidden>
+    <h3>GAME CODE</h3>
+    <div class="code" id="nbCode">··</div>
+    <div class="lobby" id="nbLobby"></div>
+    <button class="btn b-red" id="nbStart" disabled>Start game</button>
+  </div>
+  <div class="panel" id="nbJoinPanel">
+    <h3>JOIN A GAME</h3>
+    <p>Connect to your friend's hotspot first, then tap Join. If it can't find the game, type the code on their screen.</p>
+    <div class="joinrow">
+      <input id="nbCodeIn" maxlength="15" placeholder="CODE" autocomplete="off" inputmode="decimal" spellcheck="false" aria-label="Game code">
+      <button class="btn b-blue" id="nbJoin">Join</button>
+    </div>
+  </div>
+  <p class="note" id="nbNote"></p>
+</section>
+
 <section id="game" hidden>
   <div class="top">
     <button class="round" id="quit" aria-label="Back to home">✕</button>
     <span class="chip" id="left">52 cards left</span>
     <button class="round" id="mute" aria-label="Sound on">♪</button>
   </div>
-  <div class="players">
-    <div class="pl" id="p0"><div class="av">A</div><div class="pn"><b>Ama</b><small>YOUR GO!</small></div><div class="sc">0</div></div>
-    <div class="pl" id="p1"><div class="av">K</div><div class="pn"><b>Kofi</b><small>WAITING</small></div><div class="sc">0</div></div>
-  </div>
+  <div class="players" id="players"></div>
   <div class="streakrow"><span class="chip" id="streak">🔥 0 in a row</span></div>
   <div class="table">
     <div id="rays"></div>
@@ -362,38 +408,49 @@ const cleanCard=c=>c&&SUITS.some(([s,k])=>s===c.s&&k===c.c)&&RANKS.includes(c.r)
    if(i<2)el.querySelector('.inner').style.transform='rotateY(180deg)'})}
 
 /* ---------- game state ---------- */
-// modes: 'cpu' | 'pass' | 'online'. Online: the room creator is player 0 and holds the deck; the joiner is player 1.
+// modes: 'cpu' | 'pass' | 'online' (2 players, room server) | 'nearby' (2-4 phones on one hotspot; the host phone deals and decides)
 let G=null;
-const names=()=>[$('#n1').value.trim()||'Player 1',$('#n2').value.trim()||'Player 2'];
+const PCOL=['var(--red)','var(--blue)','#2fbf7f','#9b5cff'];
+let playerCount=2;
+try{playerCount=Math.min(4,Math.max(2,+localStorage.getItem('tak-count')||2))}catch(e){}
+const names=()=>[1,2,3,4].map(k=>$('#n'+k).value.trim()||'Player '+k);
 const cleanName=s=>String(s||'').replace(/[^\p{L}\p{N} '\-]/gu,'').trim().slice(0,10)||'Friend';
-function freshPlayers(a,b){return[{name:a,score:0,right:0,tries:0,best:0},{name:b,score:0,right:0,tries:0,best:0}]}
+const freshPlayers=list=>list.map(name=>({name,score:0,right:0,tries:0,best:0}));
+const CPU_NAMES=['Computer','Robo','Chip'];
 function start(mode,opts={}){
-  const[n1,n2]=names();
+  let list=opts.names;
+  if(!list){const n=names();list=mode==='cpu'?[n[0],...CPU_NAMES.slice(0,playerCount-1).map((c,k)=>playerCount>2?c:'Computer')]:n.slice(0,playerCount)}
   G={mode,deck:opts.deck===null?null:newDeck(),i:0,turn:0,busy:false,streak:0,turns:1,queue:[],running:false,me:opts.me??0,
-     p:freshPlayers(opts.names?opts.names[0]:n1,opts.names?opts.names[1]:(mode==='cpu'?'Computer':n2)),trail:[],missTop:null,over:false};
+     p:freshPlayers(list),trail:[],missTop:null,over:false};
   $('#missPile').innerHTML='<div class="empty"></div><span class="lbl">MISSES</span>';
   $('#trail').innerHTML='';$('#slot').innerHTML='<div class="ghost"></div>';
   $('#turnSheet').hidden=true;
-  show('game');renderPlayers();setStreak(0);renderDeck();renderTurn();
-  G.busy=true;deal().then(()=>{G.busy=false;renderTurn();nextAction()});
+  show('game');buildPanels();setStreak(0);renderDeck();renderTurn();
+  G.busy=true;deal().then(()=>{if(!G)return;G.busy=false;renderTurn();nextAction()});
 }
-function show(id){for(const s of['home','online','game','end'])$('#'+s).hidden=s!==id}
+function show(id){for(const s of['home','online','nearby','game','end'])$('#'+s).hidden=s!==id}
 function left(){return 52-G.i}
-function renderPlayers(){G.p.forEach((p,k)=>{const el=$('#p'+k);el.querySelector('.av').textContent=p.name[0].toUpperCase();el.querySelector('b').textContent=p.name;el.querySelector('.sc').textContent=p.score})}
+const panelOf=k=>$('#p'+k);
+function buildPanels(){
+  const box=$('#players');box.className='players n'+G.p.length;
+  box.innerHTML=G.p.map((p,k)=>`<div class="pl" id="p${k}"><div class="av" style="background:${PCOL[k]}"></div><div class="pn"><b></b><small></small></div><div class="sc">0</div></div>`).join('');
+  G.p.forEach((p,k)=>{const el=panelOf(k);el.querySelector('.av').textContent=p.name[0].toUpperCase();el.querySelector('b').textContent=p.name;el.querySelector('.sc').textContent=p.score});
+}
+function renderPlayers(){G.p.forEach((p,k)=>{panelOf(k).querySelector('.sc').textContent=p.score})}
 function renderDeck(){
   const pile=$('#deckPile');pile.querySelectorAll('.mini').forEach(e=>e.remove());
   const layers=Math.min(5,Math.ceil((left()-1)/10));
   for(let k=0;k<layers;k++){const m=makeCard(null,'mini card3d');m.style.transform=`translate(${-k*2}px,${-k*3}px) rotate(${-6+k}deg)`;pile.insertBefore(m,pile.firstChild)}
   $('#left').textContent=left()+(left()===1?' card left':' cards left');
 }
-const isCpu=()=>G&&G.mode==='cpu'&&G.turn===1;
-const isRemote=()=>G&&G.mode==='online'&&G.turn!==G.me;
+const isCpu=()=>G&&G.mode==='cpu'&&G.turn!==0;
+const isRemote=()=>G&&(G.mode==='online'||G.mode==='nearby')&&G.turn!==G.me;
 function renderTurn(){
   if(!G)return;
-  G.p.forEach((p,k)=>{const el=$('#p'+k),on=k===G.turn;el.classList.toggle('on',on);
+  G.p.forEach((p,k)=>{const el=panelOf(k),on=k===G.turn;el.classList.toggle('on',on);
     el.querySelector('small').textContent=on?(isCpu()?'THINKING…':isRemote()?'GUESSING…':'YOUR GO!'):'WAITING'});
   const lock=G.busy||isCpu()||isRemote();$('#gK').disabled=lock;$('#gR').disabled=lock;
-  $('#ask').textContent=isCpu()?'Computer is thinking…':isRemote()?`${G.p[G.turn].name} is guessing…`:"What's next?";
+  $('#ask').textContent=isCpu()?`${G.p[G.turn].name} is thinking…`:isRemote()?`${G.p[G.turn].name} is guessing…`:"What's next?";
 }
 function setStreak(n){
   G.streak=n;const el=$('#streak');el.textContent=`🔥 ${n} in a row`;el.classList.toggle('hot',n>=3);
@@ -432,9 +489,10 @@ function decide(col){const card=G.deck[G.i];return{i:G.i,col,card,ok:card.c===co
 function pick(col){
   if(!G||G.busy||G.over||isCpu()||isRemote())return;
   audio();press(col);
-  if(G.mode!=='online'){enqueue(decide(col));return}
+  if(G.mode==='cpu'||G.mode==='pass'){enqueue(decide(col));return}
+  if(G.mode==='nearby'&&NB.host){hostResolve(G.me,G.i,col);return}
   G.busy=true;renderTurn();
-  {netSend({t:'guess',i:G.i,col});clearTimeout(G.guessTimer);G.guessTimer=setTimeout(()=>{if(G&&G.busy&&!G.running){G.busy=false;renderTurn();}},4000)}
+  {(G.mode==='nearby'?nbSend:netSend)({t:'guess',i:G.i,col});clearTimeout(G.guessTimer);G.guessTimer=setTimeout(()=>{if(G&&G.busy&&!G.running){G.busy=false;renderTurn();}},4000)}
 }
 function press(col){const btn=col==='k'?$('#gK'):$('#gR');btn.classList.add('pressed');setTimeout(()=>btn.classList.remove('pressed'),140)}
 function enqueue(r){G.queue.push(r);if(!G.running)runQueue()}
@@ -445,7 +503,7 @@ async function runQueue(){
 }
 async function play(r){
   const g=G;g.busy=true;clearTimeout(g.guessTimer);renderTurn();
-  const card=r.card,el=g.cur,P=g.p[g.turn],panel=$('#p'+g.turn);
+  const card=r.card,el=g.cur,P=g.p[g.turn],panel=panelOf(g.turn);
   P.tries++;
   await flip(el,card);addTrail(card.c);
   g.i++;
@@ -516,12 +574,12 @@ async function say(big,cls,sub,hold){
   await wait(hold+400);
 }
 async function passTurn(){
-  G.turn=1-G.turn;G.turns++;sfx.whoosh();
+  G.turn=(G.turn+1)%G.p.length;G.turns++;sfx.whoosh();
   const P=G.p[G.turn],sh=$('#turnSheet'),auto=G.mode!=='pass';
-  $('#tAv').textContent=P.name[0].toUpperCase();$('#tAv').style.background=G.turn?'var(--blue)':'var(--red)';
+  $('#tAv').textContent=P.name[0].toUpperCase();$('#tAv').style.background=PCOL[G.turn];
   const mine=G.mode==='pass'||G.turn===(G.mode==='cpu'?0:G.me);
   $('#tName').textContent=G.mode==='pass'?`${P.name}'s turn`:(mine?'Your turn':`${P.name}’s turn`);
-  $('#tSub').textContent=auto?`${left()} cards left · ${G.p[0].score}–${G.p[1].score}`:`Pass the phone to ${P.name}`;
+  $('#tSub').textContent=auto?`${left()} cards left · ${G.p.map(p=>p.score).join('–')}`:`Pass the phone to ${P.name}`;
   $('#tGo').hidden=auto;$('#tGo').textContent=`I'm ${P.name}, ready`;
   sh.hidden=false;renderTurn();
   sh.querySelector('.box').animate([{transform:'translateY(60px) scale(.8) rotate(4deg)',opacity:0},{transform:'translateY(-6px) scale(1.03) rotate(-1deg)',opacity:1,offset:.7},{transform:'none'}],{duration:T(380),easing:'ease-out'});
@@ -539,18 +597,24 @@ function nextAction(){
 }
 function finish(){
   G.over=true;
-  const[a,b]=G.p,tie=a.score===b.score,w=a.score>b.score?0:1,meIdx=G.mode==='cpu'?0:G.mode==='online'?G.me:-1;
+  const top=Math.max(...G.p.map(p=>p.score)),winners=G.p.map((p,k)=>p.score===top?k:-1).filter(k=>k>=0);
+  const tie=winners.length>1,w=winners[0],meIdx=G.mode==='cpu'?0:(G.mode==='online'||G.mode==='nearby')?G.me:-1;
   $('#crown').textContent=tie?'⚖':'♛';
-  $('#winner').textContent=tie?"It's a draw!":(w===meIdx?'You win!':`${G.p[w].name} wins!`);
-  $('#finals').innerHTML=G.p.map((p,k)=>`<div class="fin ${!tie&&k===w?'win':''}"><div class="av" style="background:${k?'var(--blue)':'var(--red)'}"></div><b></b><div class="n">${p.score}</div></div>`).join('');
-  document.querySelectorAll('#finals .fin').forEach((el,k)=>{el.querySelector('.av').textContent=G.p[k].name[0].toUpperCase();el.querySelector('b').textContent=G.p[k].name});
+  $('#winner').textContent=tie?(winners.length===G.p.length?"It's a draw!":`Draw: ${winners.map(k=>G.p[k].name).join(' & ')}`):(w===meIdx?'You win!':`${G.p[w].name} wins!`);
+  $('#finals').innerHTML=G.p.map((p,k)=>`<div class="fin ${!tie&&k===w?'win':''}"><div class="av" style="background:${PCOL[k]}"></div><b></b><div class="n">${p.score}</div></div>`).join('');
+  $('#finals').style.flexWrap=G.p.length>2?'wrap':'';
+  document.querySelectorAll('#finals .fin').forEach((el,k)=>{el.querySelector('.av').textContent=G.p[k].name[0].toUpperCase();el.querySelector('b').textContent=G.p[k].name;if(G.p.length>2)el.style.flex='1 1 40%'});
   const acc=p=>p.tries?Math.round(p.right/p.tries*100)+'%':'–';
-  const best=a.best===b.best?`${a.best} · both`:(a.best>b.best?`${a.best} · ${a.name}`:`${b.best} · ${b.name}`);
+  const bestN=Math.max(...G.p.map(p=>p.best)),bestP=G.p.filter(p=>p.best===bestN);
   $('#stats').innerHTML=`<div><span>Longest streak</span><span></span></div><div><span>Accuracy</span><span></span></div><div><span>Turns</span><span>${G.turns}</span></div>`;
-  const cells=document.querySelectorAll('#stats div span:last-child');cells[0].textContent='🔥 '+best;cells[1].textContent=`${a.name} ${acc(a)} · ${b.name} ${acc(b)}`;
-  $('#again').textContent=G.mode==='online'?'↻  Ask for a rematch':'↻  Play again';
+  const cells=document.querySelectorAll('#stats div span:last-child');
+  cells[0].textContent=`🔥 ${bestN} · ${bestP.length>1?bestP.map(p=>p.name).join(', '):bestP[0].name}`;
+  cells[1].textContent=G.p.map(p=>`${p.name} ${acc(p)}`).join(' · ');
+  const guest=G.mode==='nearby'&&!NB.host;
+  $('#again').textContent=G.mode==='online'?'↻  Ask for a rematch':guest?'Waiting for the host…':'↻  Play again';
+  $('#again').disabled=guest;
   show('end');
-  if(meIdx>=0&&w!==meIdx&&!tie)sfx.wrong();else{sfx.win();cheer(2.6,1.3);confetti(220,{x:innerWidth/2,y:innerHeight*.3})}
+  if(meIdx>=0&&!winners.includes(meIdx))sfx.wrong();else{sfx.win();cheer(2.6,1.3);confetti(220,{x:innerWidth/2,y:innerHeight*.3})}
   $('#end').animate([{transform:'scale(.85)',opacity:0},{transform:'none',opacity:1}],{duration:T(400),easing:'cubic-bezier(.3,1.5,.5,1)'});
 }
 
@@ -581,7 +645,7 @@ function onNet(m){
   else if(m.t==='error'){if(!$('#online').hidden)note(m.msg||'Something went wrong.',true)}
 }
 function gone(title,sub){
-  if(!G)return;const P=G.p[1-G.me];G.over=true;
+  if(!G)return;const P=G.p[(G.me+1)%G.p.length];G.over=true;
   $('#tAv').textContent=P.name[0].toUpperCase();$('#tName').textContent=title;$('#tSub').textContent=sub;
   $('#tGo').hidden=false;$('#tGo').textContent='Back to home';$('#tGo').onclick=()=>{sfx.click();goHome()};$('#turnSheet').hidden=false;
 }
@@ -590,7 +654,112 @@ function openOnline(){
   show('online');$('#hostPanel').hidden=false;$('#joinPanel').hidden=false;$('#waitPanel').hidden=true;$('#joinCode').value='';
   note('Play a friend on another phone in real time.');
 }
-function goHome(){G=null;$('#turnSheet').hidden=true;leaveRoom();show('home')}
+function goHome(){G=null;$('#turnSheet').hidden=true;leaveRoom();nbStop();show('home')}
+/* ---------- nearby: phones on one hotspot, no internet ----------
+   The host phone runs a small WebSocket server through the app's LocalNet plugin (Android: Java-WebSocket, iOS: Network.framework),
+   shuffles the deck and decides every guess. Guests connect with a plain WebSocket to the host's address on the hotspot. */
+const NB_PORT=8737;
+const NB={host:false,plugin:null,clients:new Map(),seats:[],ws:null,ip:''};
+const native=()=>!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+function nbNote(t,err){const n=$('#nbNote');n.textContent=t;n.className='note'+(err?' err':'')}
+const cardCode=c=>c.r+{'♠':'S','♣':'C','♥':'H','♦':'D'}[c.s];
+// a short code for the host's address: "43-1" for 192.168.43.1, "10-1" for an iPhone hotspot (172.20.10.1)
+function ipToCode(ip){const m=/^(192\.168|172\.20)\.(\d+)\.(\d+)$/.exec(ip||'');return m?`${m[2]}-${m[3]}`:(ip||'?')}
+function codeToHosts(code){
+  code=(code||'').trim();
+  if(/^\d+\.\d+\.\d+\.\d+$/.test(code))return[code];
+  const m=/^(\d{1,3})\D+(\d{1,3})$/.exec(code);if(!m)return[];
+  return[`192.168.${m[1]}.${m[2]}`,`172.20.${m[1]}.${m[2]}`];
+}
+function openNearby(){
+  show('nearby');$('#nbHostPanel').hidden=false;$('#nbJoinPanel').hidden=false;$('#nbWaitPanel').hidden=true;$('#nbCodeIn').value='';
+  if(!native()){nbNote('Nearby play works in the Android and iPhone app. Download the app to play without internet.',true);$('#nbHost').disabled=true;$('#nbJoin').disabled=true;return}
+  $('#nbHost').disabled=false;$('#nbJoin').disabled=false;nbNote('');
+}
+function nbPlugin(){if(!NB.plugin&&native())NB.plugin=window.Capacitor.registerPlugin('LocalNet');return NB.plugin}
+async function nbHost(){
+  const L=nbPlugin();if(!L)return;
+  nbStop();NB.host=true;NB.clients=new Map();NB.seats=[{id:0,name:cleanName(names()[0])}];
+  try{
+    await L.addListener('connection',e=>{NB.clients.set(e.id,{id:e.id,name:null})});
+    await L.addListener('message',e=>hostOnMessage(e.id,e.data));
+    await L.addListener('disconnect',e=>hostOnLeave(e.id));
+    const r=await L.startServer({port:NB_PORT});NB.ip=r.ip||'';
+  }catch(err){NB.host=false;nbNote("Couldn't start hosting. Turn on your hotspot or Wi-Fi and try again.",true);return}
+  if(!NB.ip){nbNote('Turn on your hotspot first, then tap Host again.',true);nbStop();return}
+  $('#nbCode').textContent=ipToCode(NB.ip);$('#nbHostPanel').hidden=true;$('#nbJoinPanel').hidden=true;$('#nbWaitPanel').hidden=false;
+  renderLobby();nbNote('Friends: join this hotspot, open the game, tap Play Nearby → Join.');
+}
+function renderLobby(){
+  const seats=NB.seats;
+  $('#nbLobby').innerHTML=[0,1,2,3].map(k=>`<div class="${seats[k]?'':'empty-seat'}"><span class="av" style="background:${PCOL[k]}"></span><span></span></div>`).join('');
+  document.querySelectorAll('#nbLobby > div').forEach((el,k)=>{el.querySelector('.av').textContent=seats[k]?seats[k].name[0].toUpperCase():'';el.lastChild.textContent=seats[k]?seats[k].name+(k===0?' (you)':''):'Waiting…'});
+  $('#nbStart').disabled=seats.length<2;
+  $('#nbStart').textContent=seats.length<2?'Waiting for players…':`Start game (${seats.length} players)`;
+}
+function hostSend(id,m){NB.plugin&&NB.plugin.send({id,data:JSON.stringify(m)}).catch(()=>{})}
+function hostAll(m){for(const s of NB.seats)if(s.id)hostSend(s.id,m)}
+function hostOnMessage(id,raw){
+  let m;try{m=JSON.parse(raw)}catch(e){return}
+  if(m.t==='hello'){
+    if(NB.seats.some(s=>s.id===id))return;
+    if((G&&G.mode==='nearby'&&!G.over)||NB.seats.length>=4){hostSend(id,{t:'full'});return}
+    NB.seats.push({id,name:cleanName(m.name)});sfx.join();renderLobby();
+    hostAll({t:'lobby',names:NB.seats.map(s=>s.name)});
+  }else if(m.t==='guess'){
+    const seat=NB.seats.findIndex(s=>s.id===id);
+    if(seat>0)hostResolve(seat,m.i,m.col);
+  }
+}
+function hostResolve(seat,i,col){
+  if(!G||G.mode!=='nearby'||G.over||G.busy||G.turn!==seat||i!==G.i||(col!=='r'&&col!=='k'))return;
+  G.busy=true;renderTurn();
+  const r=decide(col);hostAll({t:'result',i:r.i,col,card:cardCode(r.card),ok:r.ok});enqueue(r);
+}
+function hostOnLeave(id){
+  const k=NB.seats.findIndex(s=>s.id===id);if(k<0){NB.clients.delete(id);return}
+  const name=NB.seats[k].name;
+  if(G&&G.mode==='nearby'&&!G.over){hostAll({t:'left',name});gone(`${name} left`,'The game has ended.');return}
+  NB.seats.splice(k,1);renderLobby();hostAll({t:'lobby',names:NB.seats.map(s=>s.name)});
+}
+function hostStartGame(){
+  if(NB.seats.length<2)return;
+  const list=NB.seats.map(s=>s.name);
+  NB.seats.forEach((s,k)=>{if(s.id)hostSend(s.id,{t:'start',names:list,you:k})});
+  sfx.join();start('nearby',{me:0,names:list});
+}
+// guests
+function nbSend(m){if(NB.ws&&NB.ws.readyState===1)NB.ws.send(JSON.stringify(m))}
+function nbJoin(){
+  nbStop();
+  const typed=$('#nbCodeIn').value;
+  const hosts=typed.trim()?codeToHosts(typed):['172.20.10.1','192.168.43.1','192.168.49.1'];
+  if(!hosts.length){nbNote('Type the code shown on the host phone, like 43-1.',true);return}
+  nbNote('Looking for the game…');
+  let done=false,fails=0;
+  for(const h of hosts){
+    let ws;try{ws=new WebSocket(`ws://${h}:${NB_PORT}`)}catch(e){fails++;continue}
+    const timer=setTimeout(()=>{try{ws.close()}catch(e){}},4000);
+    ws.onopen=()=>{clearTimeout(timer);if(done){ws.close();return}done=true;NB.ws=ws;NB.host=false;wireGuest(ws);ws.send(JSON.stringify({t:'hello',name:cleanName(names()[0])}));nbNote('Connected. Waiting for the host to start…')};
+    ws.onerror=ws.onclose=()=>{clearTimeout(timer);if(!done&&++fails>=hosts.length)nbNote(typed.trim()?"Can't find that game. Check you're on the host's hotspot and the code is right.":"Can't find a game. Join the host's hotspot, or type the code from the host's screen.",true)};
+  }
+}
+function wireGuest(ws){
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.t==='lobby'&&Array.isArray(m.names)){nbNote(`In the game: ${m.names.map(cleanName).join(', ')}. Waiting for the host to start…`)}
+    else if(m.t==='full'){nbNote('That game is full or already playing.',true)}
+    else if(m.t==='start'&&Array.isArray(m.names)&&m.names.length>=2&&m.names.length<=4&&Number.isInteger(m.you)){sfx.join();start('nearby',{deck:null,me:m.you,names:m.names.map(cleanName)})}
+    else if(m.t==='result'){if(!G||G.mode!=='nearby')return;const card=parseCard(m.card);if(!card||typeof m.i!=='number'||m.i<G.i)return;enqueue({i:m.i,col:m.col,card,ok:!!m.ok})}
+    else if(m.t==='left'){if(G&&G.mode==='nearby')gone(`${cleanName(m.name)} left`,'The game has ended.')}
+  };
+  ws.onclose=()=>{if(NB.ws!==ws)return;NB.ws=null;if(G&&G.mode==='nearby'&&!G.over)gone('Lost the host','Make sure you stay on the host’s hotspot.');else if(!$('#nearby').hidden)nbNote('Disconnected from the host.',true)};
+}
+function nbStop(){
+  if(NB.ws){const w=NB.ws;NB.ws=null;try{w.close()}catch(e){}}
+  if(NB.plugin&&NB.host){NB.plugin.stopServer().catch(()=>{});NB.plugin.removeAllListeners&&NB.plugin.removeAllListeners()}
+  NB.host=false;NB.seats=[];
+}
+
 /* ---------- confetti ---------- */
 const cv=$('#fx'),cx=cv.getContext('2d');let parts=[],running=false;
 function confetti(n,o){
@@ -615,6 +784,16 @@ function tick(){
 const codeChars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 $('#playCpu').onclick=()=>{audio();sfx.click();start('cpu')};
 $('#playPass').onclick=()=>{audio();sfx.click();start('pass')};
+$('#playNearby').onclick=()=>{audio();sfx.click();openNearby()};
+$('#nbBack').onclick=()=>{sfx.click();goHome()};
+$('#nbHost').onclick=()=>{sfx.click();nbHost()};
+$('#nbJoin').onclick=()=>{sfx.click();nbJoin()};
+$('#nbStart').onclick=()=>{sfx.click();hostStartGame()};
+function setCount(n){playerCount=n;try{localStorage.setItem('tak-count',n)}catch(e){}
+  document.querySelectorAll('.count button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
+  [3,4].forEach(k=>$('label[for=n'+k+']').hidden=k>n)}
+document.querySelectorAll('.count button').forEach(b=>b.onclick=()=>{sfx.click();setCount(+b.dataset.n)});
+setCount(playerCount);
 $('#playOnline').onclick=()=>{audio();sfx.click();openOnline()};
 $('#onBack').onclick=()=>{sfx.click();goHome()};
 $('#create').onclick=()=>{sfx.click();connect(()=>netSend({t:'create',name:cleanName(names()[0])}))};
@@ -627,7 +806,7 @@ $('#gK').onclick=()=>pick('k');
 $('#gR').onclick=()=>pick('r');
 $('#mute').onclick=()=>{setMute(!muted);if(!muted){audio();sfx.click()}};
 $('#quit').onclick=()=>{sfx.click();goHome()};
-$('#again').onclick=()=>{sfx.click();if(G.mode!=='online')return start(G.mode);
+$('#again').onclick=()=>{sfx.click();if(G.mode==='nearby'){if(NB.host)hostStartGame();return}if(G.mode!=='online')return start(G.mode);
   netSend({t:'rematch'});$('#again').textContent='Rematch asked…'};
 $('#home2').onclick=()=>{sfx.click();goHome()};
 addEventListener('keydown',e=>{if($('#game').hidden||!G||e.target.tagName==='INPUT')return;const k=e.key.toLowerCase();
