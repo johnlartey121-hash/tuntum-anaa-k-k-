@@ -12,6 +12,18 @@ Unity game for **web, Android and iOS**, in the "Pop Party" look: sunny yellow, 
 - Sound effects, all synthesised in code: deal swish, flip snap, a chime that climbs with the streak, buzzer, whoosh, fanfares.
 - **3 in a row**: a crowd cheers, the player's avatar jumps and spins, suit symbols burst out, a "3 IN A ROW!" ribbon pops up. Bigger cheers and banners at 5, 7, 10 (ON FIRE!, UNSTOPPABLE!, LEGENDARY!).
 
+## Get the game (no setup needed)
+
+Every push to `main` runs **Build apps** (`.github/workflows/app.yml`), which packages the game in `App/www` for all three platforms:
+
+- **Web**: `Tuntum-Web` artifact, and published to GitHub Pages when Pages is set to *GitHub Actions* in Settings → Pages.
+- **Android**: `Tuntum-Android` artifact holds `Tuntum.apk`; copy it to an Android phone and open it to install.
+- **iOS**: `Tuntum-iOS` artifact holds an unsigned `.ipa`, a Simulator build and the Xcode project. Putting it on a real iPhone needs signing with an Apple Developer account ($99/year).
+
+Find them under **Actions → Build apps → the latest run → Artifacts**.
+
+The Unity project below is the long-term version and builds once a Unity license is added.
+
 ## Project layout
 
 | Folder | What it is |
@@ -21,6 +33,7 @@ Unity game for **web, Android and iOS**, in the "Pop Party" look: sunny yellow, 
 | `Assets/Scripts/Net` | WebSocket client for online play ([NativeWebSocket](https://github.com/endel/NativeWebSocket)). |
 | `Assets/Scripts/Editor/ProjectSetup.cs` | App name, bundle id `com.johnlartey.tuntum`, portrait, store settings. |
 | `Assets/Tests/EditMode` | Rule tests. |
+| `App/` | The playable game (HTML/JS) and its Android/iOS packaging (Capacitor). |
 | `Server/` | Node.js room server for online play, with tests, Dockerfile and Fly.io config. |
 | `.github/workflows` | Cloud builds and server deploy. |
 

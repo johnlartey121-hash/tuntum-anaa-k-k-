@@ -1,4 +1,4 @@
-name: Build game
+name: Build Unity version (needs Unity license)
 
 # Builds the web game, Android (.apk to test, .aab for Google Play) and the iOS Xcode project
 # every time main changes. Needs the Unity secrets described in README.md ("Cloud builds").

@@ -1,0 +1,104 @@
+name: Build apps
+
+# Builds Tuntum anaa Kɔkɔɔ from App/www for the web, Android and iOS on every push to main.
+# No accounts or secrets needed. Results: the run's "Artifacts" section, and the web game on GitHub Pages.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with: { name: Tuntum-Web, path: App/www }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: App/www }
+
+  web-publish:
+    name: Publish web game
+    needs: web
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: App } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - run: npm ci --no-audit --no-fund
+      - run: npx cap add android
+      - name: App icon and splash
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#ffd84d' --splashBackgroundColor '#ffd84d'
+      - name: Portrait only
+        run: sed -i 's|android:name=".MainActivity"|android:name=".MainActivity" android:screenOrientation="portrait"|' android/app/src/main/AndroidManifest.xml
+      - run: npx cap sync android
+      - name: Build APK
+        working-directory: App/android
+        run: ./gradlew assembleDebug --no-daemon
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk Tuntum.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: Tuntum-Android, path: App/Tuntum.apk }
+
+  ios:
+    name: iOS
+    runs-on: macos-14
+    defaults: { run: { working-directory: App } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci --no-audit --no-fund
+      - run: npx cap add ios
+      - name: App icon and splash
+        run: npx capacitor-assets generate --ios --iconBackgroundColor '#ffd84d' --splashBackgroundColor '#ffd84d'
+      - name: Portrait only
+        run: |
+          P=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" $P || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" $P
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" $P
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations~ipad" $P || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad array" $P
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad:0 string UIInterfaceOrientationPortrait" $P
+          /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" $P || true
+      - run: npx cap sync ios
+      - name: Build for the iPhone Simulator
+        working-directory: App/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO | tail -5
+          cd build/Build/Products/Release-iphonesimulator && zip -qr "$GITHUB_WORKSPACE/App/Tuntum-iOS-Simulator.zip" App.app
+      - name: Build for iPhone (unsigned, ready for signing)
+        working-directory: App/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos \
+            -derivedDataPath build-device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tail -5
+          mkdir -p Payload && cp -r build-device/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qr "$GITHUB_WORKSPACE/App/Tuntum-iOS-unsigned.ipa" Payload
+      - name: Keep the Xcode project
+        run: zip -qr Tuntum-iOS-Xcode-project.zip ios -x 'ios/App/build/*' 'ios/App/build-device/*' 'ios/App/Pods/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuntum-iOS
+          path: |
+            App/Tuntum-iOS-unsigned.ipa
+            App/Tuntum-iOS-Simulator.zip
+            App/Tuntum-iOS-Xcode-project.zip

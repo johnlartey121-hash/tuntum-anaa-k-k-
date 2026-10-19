@@ -1,0 +1,8 @@
+{
+  "appId": "com.johnlartey.tuntum",
+  "appName": "Tuntum anaa Kɔkɔɔ",
+  "webDir": "www",
+  "backgroundColor": "#ffd84d",
+  "ios": { "contentInset": "never" },
+  "android": { "backgroundColor": "#ffd84d" }
+}
