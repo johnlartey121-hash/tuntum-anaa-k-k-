@@ -98,6 +98,23 @@ jobs:
             -derivedDataPath build-device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tail -5
           mkdir -p Payload && cp -r build-device/Build/Products/Release-iphoneos/App.app Payload/
           zip -qr "$GITHUB_WORKSPACE/App/Tuntum-iOS-unsigned.ipa" Payload
+      - name: Run it on a simulated iPhone and record it
+        working-directory: App/ios/App
+        run: |
+          DEV=$(xcrun simctl list devices available | grep -m1 -E "iPhone 15 \\(" | grep -oE "[0-9A-F-]{36}")
+          [ -z "$DEV" ] && DEV=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE "[0-9A-F-]{36}")
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl install "$DEV" build/Build/Products/Release-iphonesimulator/App.app
+          xcrun simctl io "$DEV" recordVideo --codec h264 --force "$GITHUB_WORKSPACE/App/iphone-sim.mp4" & REC=$!
+          sleep 2; xcrun simctl launch "$DEV" com.johnlartey.tuntum; sleep 8
+          xcrun simctl io "$DEV" screenshot "$GITHUB_WORKSPACE/App/iphone-sim-home.png"
+          sleep 4; kill -INT $REC; sleep 3
+      - name: Publish the iPhone simulator screenshot and video
+        env: { GH_TOKEN: '${{ github.token }}' }
+        working-directory: App
+        run: |
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title "Latest game build" --notes "Game downloads."
+          gh release upload latest iphone-sim-home.png iphone-sim.mp4 Tuntum-iOS-unsigned.ipa --clobber
       - name: Keep the Xcode project
         run: zip -qr Tuntum-iOS-Xcode-project.zip ios -x 'ios/App/build/*' 'ios/App/build-device/*' 'ios/App/Pods/*'
       - uses: actions/upload-artifact@v4
