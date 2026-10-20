@@ -21,3 +21,9 @@ Server/node_modules/
 App/node_modules/
 App/android/
 App/ios/
+
+# Downloaded build outputs (published as GitHub release files)
+/Release/
+/Tuntum.apk
+/Tuntum-iOS-Xcode-project.zip
+/iphone-sim*
