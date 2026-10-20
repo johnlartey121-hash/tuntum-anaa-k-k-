@@ -10,3 +10,9 @@
 - One-line rules strip at the bottom. Mute button top right.
 - Small phones: cards and title scale down, tiles drop their small description.
 - Tapping a tile opens **Who's playing?**: pick 2/3/4 players, edit names (remembered), Start game.
+
+## Loading screen (approved 20 Oct 2026)
+- Slogan: **"Trust your gut. Call the card."** with "Are you a born guesser?" underneath.
+- Floating cards and game name, slowly turning light rays, a green loading bar ("Shuffling the deck…"), and a random tip at the bottom.
+
+![Built screens](design/build-loading-home-setup.png)

@@ -48,7 +48,9 @@ section{height:100%;display:flex;flex-direction:column}
 .round:active{transform:translateY(3px);box-shadow:none}
 
 /* ---------- home ---------- */
-#home{justify-content:safe center;gap:16px;text-align:center;overflow-y:auto;padding:0 6px 10px 2px}
+#home{gap:min(12px,1.4vh);text-align:center;overflow:hidden;padding:0 6px 6px 2px}
+.hero{flex:none;display:flex;flex-direction:column;align-items:center;zoom:var(--hs,1)}
+#home .hero{margin-top:4px}
 .logo{position:relative;height:180px;flex:none;margin:0 auto;width:280px}
 .logo .lc{position:absolute;top:18px;left:50%;width:110px;margin-left:-55px}
 .logo .lc:nth-child(1){animation:wobL 3s ease-in-out infinite}
@@ -57,8 +59,8 @@ section{height:100%;display:flex;flex-direction:column}
 @keyframes wobL{50%{transform:translateX(-78px) rotate(-22deg)}0%,100%{transform:translateX(-70px) rotate(-16deg)}}
 @keyframes wobR{50%{transform:translateX(78px) rotate(22deg)}0%,100%{transform:translateX(70px) rotate(16deg)}}
 @keyframes bob{50%{transform:translateY(-12px) rotate(-3deg)}0%,100%{transform:translateY(0) rotate(2deg)}}
-h1{font:400 clamp(44px,13vw,60px)/.92 var(--display);letter-spacing:.5px;text-wrap:balance}
-h1 .and{display:block;font:900 15px var(--body);letter-spacing:7px;margin:8px 0 6px}
+h1{font:400 50px/.9 var(--display);letter-spacing:.5px;text-wrap:balance}
+h1 .and{display:block;font:900 13px var(--body);letter-spacing:7px;margin:6px 0 5px}
 h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:4px 4px 0 var(--ink)}
 .tag{font:800 15px var(--body);opacity:.75}
 .modes{display:flex;flex-direction:column;gap:12px}
@@ -185,7 +187,6 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
 .count{display:flex;align-items:center;justify-content:center;gap:8px;font:800 13px var(--body);letter-spacing:1px}
 .count button{width:44px;height:38px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font:400 20px var(--display);box-shadow:0 3px 0 var(--ink)}
 .count button.on{background:var(--ink);color:var(--paper)}
-.names{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
 .names label[hidden]{display:none}
 .b-mint{background:var(--mint)}
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -199,37 +200,169 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
 .lobby .empty-seat{opacity:.4}
 .lobby .empty-seat .av{background:transparent;border-style:dashed}
 .hint{font:600 13px/1.4 var(--body);opacity:.75}
+/* home tiles */
+.tiles{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;padding:0 5px 6px 0}
+.tile{min-height:0;overflow:hidden;border:4px solid var(--ink);border-radius:20px;box-shadow:0 5px 0 var(--ink);display:flex;flex-direction:column;padding:4px 10px 9px;text-align:left;transition:transform .08s,box-shadow .08s}
+.tile:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.tile .art{flex:1;min-height:0;width:100%;overflow:visible}
+.tile b{display:block;font:400 19px/1 var(--display)}
+.tile small{display:block;font:800 11px var(--body);opacity:.85;margin-top:2px}
+.t-red{background:var(--red);color:var(--paper)}.t-mint{background:var(--mint)}.t-white{background:var(--paper)}.t-blue{background:var(--blue);color:var(--paper)}
+.ruleline{flex:none;background:var(--paper);border:3px solid var(--ink);border-radius:30px;padding:6px 12px;font:800 12.5px var(--body);text-align:center}
+.homemute{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));z-index:5}
+/* setup */
+#setup{gap:12px}
+#setup h2{font:400 34px/1 var(--display);margin-top:6px}
+.lab{font:900 12px var(--body);letter-spacing:1.5px}
+.count{justify-content:stretch}
+.count button{flex:1;height:54px;font-size:26px;border-radius:14px}
+.names{display:flex;flex-direction:column;gap:8px}
+.names label{display:flex;align-items:center;gap:10px;font:800 12px var(--body)}
+.names label .av{flex:none;width:32px;height:32px;font-size:14px}
+.names input{flex:1;min-width:0;margin:0}
+.names .cpu{flex:1;border:3px solid var(--ink);border-radius:14px;padding:10px 12px;font:800 16px var(--body);background:var(--cream)}
+.pillchip{background:var(--paper);border:3px solid var(--ink);border-radius:30px;padding:5px 12px;font:800 13px var(--body)}
+#setup .grow{flex:1}
+/* loading */
+#loading{position:fixed;inset:0;z-index:60;background:var(--sun);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px max(16px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px));overflow:hidden}
+#loading .rays{position:absolute;left:50%;top:40%;width:160vmax;height:160vmax;margin:-80vmax;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.22) 0 9deg,transparent 9deg 22deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 55%);mask:radial-gradient(circle,#000 0,transparent 55%);animation:spin 30s linear infinite}
+#loading>*{position:relative}
+.slogan{font:400 34px/1.02 var(--display);margin-top:18px}
+.slogan em{font-style:normal;display:block;color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink)}
+.slogsub{font:800 14px var(--body);opacity:.75;margin-top:8px}
+.lbar{width:min(260px,70vw);height:26px;border:4px solid var(--ink);border-radius:20px;background:var(--paper);margin-top:28px;overflow:hidden;box-shadow:0 4px 0 var(--ink);position:relative}
+.lbar i{position:absolute;left:0;top:0;bottom:0;width:0;background:repeating-linear-gradient(-45deg,var(--mint) 0 12px,#2fbf7f 12px 24px);border-right:4px solid var(--ink)}
+.ltip{position:absolute;left:max(20px,env(safe-area-inset-left,0px));right:max(20px,env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:10px 14px;font:700 13px/1.35 var(--body);box-shadow:3px 3px 0 var(--ink)}
+@media (max-height:700px){.tile small{display:none}.tile b{font-size:17px}}
 @media (max-height:640px){:root{--ch:min(25vh,200px)}.rules{display:none}}
-@media (prefers-reduced-motion:reduce){.logo .lc,#rays,#streak.hot{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.logo .lc,#rays,#streak.hot,#loading .rays{animation:none!important}}
 </style>
 
+<div id="loading" role="status" aria-label="Loading">
+  <div class="rays"></div>
+  <div class="hero"><div class="logo" aria-hidden="true"><div class="lc"></div><div class="lc"></div><div class="lc"></div></div>
+  <h1>Tuntum<span class="and">ANAA</span><span class="r">Kɔkɔɔ</span></h1></div>
+  <p class="slogan">Trust your gut.<em>Call the card.</em></p>
+  <p class="slogsub">Are you a born guesser?</p>
+  <div class="lbar"><i id="lbarFill"></i></div>
+  <p class="slogsub">Shuffling the deck…</p>
+  <p class="ltip" id="ltip"></p>
+</div>
 <div class="bg"><i></i><i></i></div>
 <div id="app">
 
 <section id="home">
-  <div class="logo" aria-hidden="true">
-    <div class="lc"></div><div class="lc"></div><div class="lc"></div>
-  </div>
-  <div>
+  <button class="round homemute" id="homeMute" aria-label="Sound on">♪</button>
+  <div class="hero">
+    <div class="logo" aria-hidden="true"><div class="lc"></div><div class="lc"></div><div class="lc"></div></div>
     <h1>Tuntum<span class="and">ANAA</span><span class="r">Kɔkɔɔ</span></h1>
-    <p class="tag">Black or red? Call the next card.</p>
   </div>
-  <div class="count" role="group" aria-label="Number of players">PLAYERS
-    <button data-n="2" class="on">2</button><button data-n="3">3</button><button data-n="4">4</button>
+  <div class="tiles">
+    <button class="tile t-red" data-mode="cpu"><svg viewBox="0 0 170 140" class="art" aria-hidden="true"><defs><radialGradient id="gff9a9d"><stop offset="0" stop-color="#ff9a9d" stop-opacity=".9"/><stop offset="1" stop-color="#ff9a9d" stop-opacity="0"/></radialGradient></defs><ellipse cx="85" cy="72" rx="80" ry="66" fill="url(#gff9a9d)"/><ellipse cx="85" cy="133" rx="60" ry="6" fill="#111" opacity=".18"/>
+<g stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<line x1="85" y1="14" x2="85" y2="30"/><circle cx="85" cy="12" r="7" fill="#ffd84d"/>
+<path d="M58 132 Q56 96 85 94 Q114 96 112 132Z" fill="#cfd8e8"/>
+<rect x="74" y="104" width="22" height="14" rx="4" fill="#3ddc97"/>
+<rect x="48" y="30" width="74" height="60" rx="20" fill="#eef3fb"/>
+<path d="M56 42 Q60 35 70 34" stroke="#fff" stroke-width="5" fill="none"/>
+<rect x="58" y="44" width="54" height="30" rx="13" fill="#1b2233"/>
+<ellipse cx="73" cy="59" rx="7" ry="8" fill="#3ddc97" stroke="none"/><ellipse cx="97" cy="59" rx="7" ry="8" fill="#3ddc97" stroke="none"/>
+<circle cx="75" cy="56" r="2.5" fill="#fff" stroke="none"/><circle cx="99" cy="56" r="2.5" fill="#fff" stroke="none"/>
+<path d="M78 80 Q85 85 92 80" fill="none"/>
+<rect x="40" y="52" width="9" height="18" rx="4" fill="#eef3fb"/><rect x="121" y="52" width="9" height="18" rx="4" fill="#eef3fb"/>
+<path d="M58 104 Q40 100 34 90" fill="none" stroke-width="7"/><path d="M112 104 Q130 100 136 90" fill="none" stroke-width="7"/>
+</g>
+<g transform="translate(30 80) rotate(-24) scale(1)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#fff"/><text x="0" y="8" text-anchor="middle" font-family="Segoe UI Symbol,DejaVu Sans,sans-serif" font-size="22" fill="#d93a40" stroke="none">♥</text></g><g transform="translate(42 76) rotate(-8) scale(1)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#fff"/><text x="0" y="8" text-anchor="middle" font-family="Segoe UI Symbol,DejaVu Sans,sans-serif" font-size="22" fill="#111" stroke="none">♠</text></g>
+<g transform="translate(132 80) rotate(20) scale(1)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#3d7bff"/><circle cx="0" cy="0" r="7" fill="#fff" stroke-width="3"/><text x="0" y="4.5" text-anchor="middle" font-family="Lilita One,Arial Black,sans-serif" font-size="12" fill="#111" stroke="none">?</text></g><g transform="translate(144 88) rotate(32) scale(1)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#3d7bff"/><circle cx="0" cy="0" r="7" fill="#fff" stroke-width="3"/><text x="0" y="4.5" text-anchor="middle" font-family="Lilita One,Arial Black,sans-serif" font-size="12" fill="#111" stroke="none">?</text></g>
+<path transform="translate(22 30) scale(1)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><path transform="translate(150 34) scale(0.8)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#ffd84d" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><path transform="translate(140 120) scale(0.6)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+</svg><span><b>vs Computer</b><small>1–3 computer players</small></span></button>
+    <button class="tile t-mint" data-mode="nearby"><svg viewBox="0 0 170 140" class="art" aria-hidden="true"><defs><radialGradient id="ga6f5cf"><stop offset="0" stop-color="#a6f5cf" stop-opacity=".9"/><stop offset="1" stop-color="#a6f5cf" stop-opacity="0"/></radialGradient></defs><ellipse cx="85" cy="72" rx="80" ry="66" fill="url(#ga6f5cf)"/><ellipse cx="85" cy="133" rx="60" ry="6" fill="#111" opacity=".18"/>
+<g stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" fill="none"><path d="M60 28 Q85 6 110 28"/><path d="M68 38 Q85 22 102 38"/></g><circle cx="85" cy="47" r="5" fill="#111"/>
+<g stroke="#111" stroke-width="3" stroke-dasharray="1 7" stroke-linecap="round" fill="none"><path d="M78 52 Q50 56 40 74"/><path d="M92 52 Q120 56 130 74"/><path d="M85 54 L85 70"/></g>
+<g transform="translate(36 88) scale(0.82 0.82)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#ff5a5f"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#8d5a3b"/><path d="M-17 -4 Q-20 -24 -4 -26 Q10 -30 17 -16 Q22 -6 17 -2 Q14 -14 0 -14 Q-12 -14 -17 -4Z" fill="#111"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 4 Q0 10 6 4" fill="none"/></g><g transform="translate(52 112) rotate(-14) scale(0.8)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#ffd84d" stroke="none"/></g>
+<g transform="translate(134 88) scale(-0.82 0.82)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#3d7bff"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#c88a5e"/><path d="M-16 -6 Q-16 -24 0 -24 Q16 -24 16 -6 Q10 -14 0 -14 Q-10 -14 -16 -6Z" fill="#111"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 4 Q0 10 6 4" fill="none"/></g><g transform="translate(118 112) rotate(14) scale(0.8)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#ff5a5f" stroke="none"/></g>
+<g transform="translate(85 96) scale(0.9 0.9)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#ffd84d"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#5a3825"/><path d="M-16 -4 Q-18 -24 0 -24 Q18 -24 16 -4 Q10 -14 0 -14 Q-10 -14 -16 -4Z" fill="#111"/><circle cx="-19" cy="4" r="5" fill="#111"/><circle cx="19" cy="4" r="5" fill="#111"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 3 Q0 13 6 3 Z" fill="#7a1f24"/></g><g transform="translate(85 124) rotate(0) scale(0.8)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#3d7bff" stroke="none"/></g>
+<path transform="translate(20 40) scale(0.7)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><path transform="translate(150 44) scale(0.7)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#ffd84d" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+</svg><span><b>Nearby</b><small>No internet · up to 4</small></span></button>
+    <button class="tile t-white" data-mode="pass"><svg viewBox="0 0 170 140" class="art" aria-hidden="true"><defs><radialGradient id="gffffff"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs><ellipse cx="85" cy="72" rx="80" ry="66" fill="url(#gffffff)"/><ellipse cx="85" cy="133" rx="60" ry="6" fill="#111" opacity=".18"/>
+<g transform="translate(40 84) scale(0.9 0.9)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#ff5a5f"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#6b4128"/><path d="M-17 -6 Q-16 -26 0 -26 Q16 -26 17 -6Z" fill="#111"/><path d="M8 -8 L28 -6" stroke-width="5"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 4 Q0 10 6 4" fill="none"/></g>
+<g transform="translate(130 84) scale(-0.9 0.9)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#9b5cff"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#d9a37a"/><path d="M-16 -4 Q-18 -24 0 -24 Q18 -24 16 -4 Q10 -14 0 -14 Q-10 -14 -16 -4Z" fill="#3a2a1a"/><circle cx="-19" cy="4" r="5" fill="#3a2a1a"/><circle cx="19" cy="4" r="5" fill="#3a2a1a"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 3 Q0 13 6 3 Z" fill="#7a1f24"/></g>
+<g stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><path d="M58 112 Q72 104 80 100" fill="none" stroke-width="7"/><path d="M112 112 Q98 104 90 100" fill="none" stroke-width="7"/></g>
+<g transform="translate(85 92) rotate(-10) scale(1.15)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#ffd84d" stroke="none"/></g>
+<g stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" fill="none"><path d="M60 40 Q85 22 110 40"/><path d="M104 32 L111 41 L100 44" /></g>
+<g stroke="#111" stroke-width="3" stroke-linecap="round"><path d="M64 70 l-6 -4 M66 62 l-7 -1"/><path d="M106 70 l6 -4 M104 62 l7 -1"/></g>
+<g transform="translate(18 124) rotate(-20) scale(0.75)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#fff"/><text x="0" y="8" text-anchor="middle" font-family="Segoe UI Symbol,DejaVu Sans,sans-serif" font-size="22" fill="#d93a40" stroke="none">♦</text></g><g transform="translate(152 124) rotate(18) scale(0.75)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#fff"/><text x="0" y="8" text-anchor="middle" font-family="Segoe UI Symbol,DejaVu Sans,sans-serif" font-size="22" fill="#111" stroke="none">♣</text></g><path transform="translate(85 20) scale(0.7)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#ffd84d" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+</svg><span><b>Pass &amp; Play</b><small>2–4 on one phone</small></span></button>
+    <button class="tile t-blue" data-mode="online"><svg viewBox="0 0 170 140" class="art" aria-hidden="true"><defs><radialGradient id="ga9c8ff"><stop offset="0" stop-color="#a9c8ff" stop-opacity=".9"/><stop offset="1" stop-color="#a9c8ff" stop-opacity="0"/></radialGradient></defs><ellipse cx="85" cy="72" rx="80" ry="66" fill="url(#ga9c8ff)"/><ellipse cx="85" cy="133" rx="60" ry="6" fill="#111" opacity=".18"/>
+<g stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><circle cx="85" cy="74" r="40" fill="#7fb2ff"/>
+<path d="M58 52 q14 -8 24 2 q-2 14 -16 12 q-12 2 -8 -14z M92 42 q18 2 22 16 q-12 6 -20 -2 z M84 86 q16 -4 24 8 q-6 18 -20 14 q-10 -8 -4 -22z M54 84 q8 0 10 8 q-4 8 -10 4z" fill="#3ddc97" stroke-width="3.5"/>
+<path d="M54 50 Q62 40 74 37" stroke="#fff" stroke-width="5" fill="none" opacity=".7"/></g>
+<path d="M30 60 Q85 -10 140 60" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+<g transform="translate(85 22) rotate(-12) scale(0.85)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-14" y="-20" width="28" height="40" rx="5" fill="#fff"/><text x="0" y="8" text-anchor="middle" font-family="Segoe UI Symbol,DejaVu Sans,sans-serif" font-size="22" fill="#d93a40" stroke="none">♥</text></g>
+<g transform="translate(26 96) scale(0.62 0.62)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#ff5a5f"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#8d5a3b"/><path d="M-17 -4 Q-20 -24 -4 -26 Q10 -30 17 -16 Q22 -6 17 -2 Q14 -14 0 -14 Q-12 -14 -17 -4Z" fill="#111"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 4 Q0 10 6 4" fill="none"/></g><g transform="translate(38 112) rotate(-12) scale(0.6)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#ffd84d" stroke="none"/></g>
+<g transform="translate(146 96) scale(-0.62 0.62)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-22 60 Q-24 22 0 20 Q24 22 22 60 Z" fill="#ffd84d"/>
+<path d="M-14 30 Q-12 24 -6 23" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="3"/>
+<circle cx="0" cy="0" r="17" fill="#e2b48c"/><path d="M-16 -6 Q-16 -24 0 -24 Q16 -24 16 -6 Q10 -14 0 -14 Q-10 -14 -16 -6Z" fill="#6b3a1a"/>
+<circle cx="-6" cy="-2" r="2.4" fill="#111" stroke="none"/><circle cx="6" cy="-2" r="2.4" fill="#111" stroke="none"/>
+<circle cx="-10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/><circle cx="10" cy="4" r="3" fill="#ff8a8a" stroke="none" opacity=".7"/>
+<path d="M-6 4 Q0 10 6 4" fill="none"/></g><g transform="translate(134 112) rotate(12) scale(0.6)" stroke="#111" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="-11" y="-19" width="22" height="38" rx="5" fill="#111"/><rect x="-7" y="-14" width="14" height="25" rx="2" fill="#3d7bff" stroke="none"/></g>
+<path transform="translate(150 24) scale(0.7)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><path transform="translate(18 28) scale(0.6)" d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5Z" fill="#ffd84d" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+</svg><span><b>Online</b><small>Play a friend anywhere</small></span></button>
   </div>
+  <p class="ruleline">Guess black ♠♣ or red ♥♦ · Right = +1 · Wrong = next player</p>
+</section>
+
+<section id="setup" hidden>
+  <div class="top" style="justify-content:flex-start"><button class="round" id="setBack" aria-label="Back">←</button><span class="pillchip" id="setMode">Pass &amp; Play</span></div>
+  <h2 id="setTitle">Who's playing?</h2>
+  <div id="countWrap"><div class="lab">PLAYERS</div>
+  <div class="count" role="group" aria-label="Number of players"><button data-n="2" class="on">2</button><button data-n="3">3</button><button data-n="4">4</button></div></div>
+  <div class="lab" id="namesLab">NAMES</div>
   <div class="names">
-    <label for="n1">PLAYER 1<input id="n1" maxlength="10" value="Ama" autocomplete="off"></label>
-    <label for="n2">PLAYER 2<input id="n2" maxlength="10" value="Kofi" autocomplete="off"></label>
-    <label for="n3" hidden>PLAYER 3<input id="n3" maxlength="10" value="Esi" autocomplete="off"></label>
-    <label for="n4" hidden>PLAYER 4<input id="n4" maxlength="10" value="Yaw" autocomplete="off"></label>
+    <label for="n1"><span class="av" style="background:var(--red)">1</span><input id="n1" maxlength="10" value="Ama" autocomplete="off" aria-label="Player 1 name"></label>
+    <label for="n2"><span class="av" style="background:var(--blue)">2</span><input id="n2" maxlength="10" value="Kofi" autocomplete="off" aria-label="Player 2 name"><span class="cpu" hidden></span></label>
+    <label for="n3" hidden><span class="av" style="background:#2fbf7f">3</span><input id="n3" maxlength="10" value="Esi" autocomplete="off" aria-label="Player 3 name"><span class="cpu" hidden></span></label>
+    <label for="n4" hidden><span class="av" style="background:#9b5cff">4</span><input id="n4" maxlength="10" value="Yaw" autocomplete="off" aria-label="Player 4 name"><span class="cpu" hidden></span></label>
   </div>
-  <div class="modes">
-    <button class="btn b-red" id="playCpu">▶&nbsp; Play vs Computer</button>
-    <button class="btn b-mint" id="playNearby">Play Nearby (no internet)</button>
-    <button class="btn b-blue" id="playOnline">Play Online</button>
-    <button class="btn b-white" id="playPass">Pass &amp; Play</button>
-  </div>
-  <div class="rules"><b>How to play.</b> Guess if the face-down card is <b>Tuntum</b> (black ♠♣) or <b>Kɔkɔɔ</b> (red ♥♦). Right: +1 and go again. Wrong: your turn ends. Most points when all 52 cards are gone wins.</div>
+  <div class="grow"></div>
+  <button class="btn b-red" id="setGo">▶&nbsp; Start game</button>
 </section>
 
 <section id="online" hidden>
@@ -389,7 +522,7 @@ const sfx={
   win(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,i==5?.7:.18,{type:'square',vol:.1,at:i*.13}));[523,659,784].forEach(f=>tone(f,.9,{vol:.12,at:.8}))}
 };
 function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
-function setMute(m){muted=m;$('#mute').textContent=m?'✕♪':'♪';$('#mute').setAttribute('aria-label',m?'Sound off':'Sound on');try{localStorage.setItem('tak-muted',m?'1':'0')}catch(e){}}
+function setMute(m){muted=m;for(const b of[$('#mute'),$('#homeMute')])if(b)b.textContent=m?'✕♪':'♪';$('#mute').setAttribute('aria-label',m?'Sound off':'Sound on');try{localStorage.setItem('tak-muted',m?'1':'0')}catch(e){}}
 
 /* ---------- cards ---------- */
 const SUITS=[['♠','k'],['♣','k'],['♥','r'],['♦','r']];
@@ -404,7 +537,7 @@ function setFront(el,c){const inner=el.querySelector('.inner');inner.querySelect
 function newDeck(){const d=[];for(const[s,c]of SUITS)for(const r of RANKS)d.push({s,c,r});for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]]}return d}
 const cleanCard=c=>c&&SUITS.some(([s,k])=>s===c.s&&k===c.c)&&RANKS.includes(c.r)?{s:c.s,c:c.c,r:c.r}:null;
 {const show=[{s:'♠',c:'k',r:'K'},{s:'♥',c:'r',r:'A'},{s:'♦',c:'r',r:'7'}];
- document.querySelectorAll('.logo .lc').forEach((el,i)=>{el.style.setProperty('--ch','150px');el.style.height='150px';el.innerHTML=makeCard(show[i]).innerHTML;el.className='lc card3d';
+ document.querySelectorAll('.logo .lc').forEach((el,j)=>{const i=j%3;el.style.setProperty('--ch','150px');el.style.height='150px';el.innerHTML=makeCard(show[i]).innerHTML;el.className='lc card3d';
    if(i<2)el.querySelector('.inner').style.transform='rotateY(180deg)'})}
 
 /* ---------- game state ---------- */
@@ -428,7 +561,7 @@ function start(mode,opts={}){
   show('game');buildPanels();setStreak(0);renderDeck();renderTurn();
   G.busy=true;deal().then(()=>{if(!G)return;G.busy=false;renderTurn();nextAction()});
 }
-function show(id){for(const s of['home','online','nearby','game','end'])$('#'+s).hidden=s!==id}
+function show(id){for(const s of['home','setup','online','nearby','game','end'])$('#'+s).hidden=s!==id}
 function left(){return 52-G.i}
 const panelOf=k=>$('#p'+k);
 function buildPanels(){
@@ -782,19 +915,45 @@ function tick(){
 
 /* ---------- wiring ---------- */
 const codeChars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-$('#playCpu').onclick=()=>{audio();sfx.click();start('cpu')};
-$('#playPass').onclick=()=>{audio();sfx.click();start('pass')};
-$('#playNearby').onclick=()=>{audio();sfx.click();openNearby()};
 $('#nbBack').onclick=()=>{sfx.click();goHome()};
 $('#nbHost').onclick=()=>{sfx.click();nbHost()};
 $('#nbJoin').onclick=()=>{sfx.click();nbJoin()};
 $('#nbStart').onclick=()=>{sfx.click();hostStartGame()};
+/* home → setup → game */
+const MODE_NAME={cpu:'vs Computer',pass:'Pass & Play',nearby:'Nearby',online:'Online'};
+let setupMode='pass';
+function openSetup(mode){
+  setupMode=mode;$('#setMode').textContent=MODE_NAME[mode];
+  const solo=mode==='online'||mode==='nearby';
+  $('#countWrap').hidden=solo;$('#setTitle').textContent=solo?"What's your name?":"Who's playing?";
+  $('#namesLab').textContent=solo?'YOUR NAME':'NAMES';$('#setGo').innerHTML=solo?'Continue&nbsp; →':'▶&nbsp; Start game';
+  setCount(playerCount);show('setup');
+}
 function setCount(n){playerCount=n;try{localStorage.setItem('tak-count',n)}catch(e){}
   document.querySelectorAll('.count button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
-  [3,4].forEach(k=>$('label[for=n'+k+']').hidden=k>n)}
+  const solo=setupMode==='online'||setupMode==='nearby',shown=solo?1:n;
+  [2,3,4].forEach(k=>{const lab=$('label[for=n'+k+']');lab.hidden=k>shown;const cpu=setupMode==='cpu';
+    lab.querySelector('input').hidden=cpu;const c=lab.querySelector('.cpu');c.hidden=!cpu;c.textContent=n>2?CPU_NAMES[k-2]:'Computer'})}
+function saveNames(){try{localStorage.setItem('tak-names',JSON.stringify(names()))}catch(e){}}
+try{const saved=JSON.parse(localStorage.getItem('tak-names')||'null');if(Array.isArray(saved))saved.forEach((v,k)=>{if(k<4&&typeof v==='string'&&v)$('#n'+(k+1)).value=v.slice(0,10)})}catch(e){}
+document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>{audio();sfx.click();openSetup(t.dataset.mode)});
+$('#setBack').onclick=()=>{sfx.click();show('home')};
+$('#setGo').onclick=()=>{audio();sfx.click();saveNames();
+  if(setupMode==='online')openOnline();else if(setupMode==='nearby')openNearby();else start(setupMode)};
+$('#homeMute').onclick=()=>{setMute(!muted);if(!muted){audio();sfx.click()}};
+/* fit the home screen to any phone height without scrolling */
+function fitHome(){const h=innerHeight,hs=h>=820?1:h<=560?.62:.62+(h-560)/260*.38;document.documentElement.style.setProperty('--hs',hs.toFixed(3))}
+addEventListener('resize',fitHome);fitHome();
+/* loading screen */
+(function(){
+  const tips=['<b>Tip:</b> keep track of the colours. If lots of red has gone, black is more likely!','<b>Tip:</b> 3 right in a row and the crowd cheers for you!','<b>Tip:</b> no internet? Turn on a hotspot and play Nearby with up to 4 phones.','<b>Tip:</b> 26 cards are red and 26 are black. Count them!','<b>Tip:</b> a wrong guess only ends your turn. Your points stay.'];
+  $('#ltip').innerHTML=tips[Math.random()*tips.length|0];
+  const fill=$('#lbarFill'),L=$('#loading'),dur=RM?300:2200;
+  fill.animate([{width:'0%'},{width:'70%',offset:.6},{width:'100%'}],{duration:dur,easing:'ease-in-out',fill:'forwards'});
+  setTimeout(()=>{L.animate([{opacity:1},{opacity:0}],{duration:RM?80:350,fill:'forwards'}).finished.then(()=>L.remove())},dur+150);
+})();
 document.querySelectorAll('.count button').forEach(b=>b.onclick=()=>{sfx.click();setCount(+b.dataset.n)});
 setCount(playerCount);
-$('#playOnline').onclick=()=>{audio();sfx.click();openOnline()};
 $('#onBack').onclick=()=>{sfx.click();goHome()};
 $('#create').onclick=()=>{sfx.click();connect(()=>netSend({t:'create',name:cleanName(names()[0])}))};
 $('#join').onclick=()=>{sfx.click();const c=$('#joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==4){note('Type the 4-letter code from your friend.',true);return}connect(()=>{note('Joining '+c+'…');netSend({t:'join',code:c,name:cleanName(names()[0])})})};
