@@ -1,3 +1,4 @@
+# Tuntum anaa Kɔkɔɔ online room server (deployed by .github/workflows/server.yml)
 app = "tuntum-anaa-kokoo"
 primary_region = "lhr"
 
