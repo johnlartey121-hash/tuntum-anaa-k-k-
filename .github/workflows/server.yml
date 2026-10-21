@@ -19,7 +19,15 @@ jobs:
         run: echo "::notice::No FLY_API_TOKEN secret yet; the server was not deployed."
       - uses: superfly/flyctl-actions/setup-flyctl@master
         if: env.FLY_API_TOKEN != ''
+      - name: Create the Fly app (first time only)
+        if: env.FLY_API_TOKEN != ''
+        working-directory: Server
+        run: flyctl apps create tuntum-anaa-kokoo --org personal || echo "App already exists"
       - name: Deploy
         if: env.FLY_API_TOKEN != ''
         working-directory: Server
-        run: flyctl deploy --remote-only
+        run: flyctl deploy --remote-only --ha=false
+      - name: Check it is online
+        if: env.FLY_API_TOKEN != ''
+        run: |
+          for i in $(seq 1 20); do curl -sf https://tuntum-anaa-kokoo.fly.dev/health && exit 0; sleep 6; done; exit 1
