@@ -30,4 +30,12 @@ jobs:
       - name: Check it is online
         if: env.FLY_API_TOKEN != ''
         run: |
-          for i in $(seq 1 20); do curl -sf https://tuntum-anaa-kokoo.fly.dev/health && exit 0; sleep 6; done; exit 1
+          for i in $(seq 1 20); do curl -sf https://tuntum-anaa-kokoo.fly.dev/health && break; sleep 6; done
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Play a 4-player game against the live server
+        working-directory: Server
+        run: |
+          npm install --no-audit --no-fund
+          node test/live-check.js wss://tuntum-anaa-kokoo.fly.dev
+          flyctl status --app tuntum-anaa-kokoo || true
