@@ -27,14 +27,22 @@ function client(port) {
   };
 }
 
+async function room(port, names) {
+  const cs = names.map(() => client(port));
+  await Promise.all(cs.map(c => c.open()));
+  cs[0].send({ t: 'create', name: names[0] });
+  const { code } = await cs[0].next('created');
+  for (let k = 1; k < cs.length; k++) { cs[k].send({ t: 'join', code: code.toLowerCase(), name: names[k] }); await cs[k].next('lobby'); }
+  return { cs, code };
+}
+async function startRoom(cs) {
+  cs[0].send({ t: 'start' });
+  return Promise.all(cs.map(c => c.next('start')));
+}
 async function pair(port) {
-  const a = client(port), b = client(port);
-  await Promise.all([a.open(), b.open()]);
-  a.send({ t: 'create', name: 'Ama' });
-  const { code } = await a.next('created');
-  b.send({ t: 'join', code: code.toLowerCase(), name: 'Kofi' });
-  const [sa, sb] = await Promise.all([a.next('start'), b.next('start')]);
-  return { a, b, code, sa, sb };
+  const { cs, code } = await room(port, ['Ama', 'Kofi']);
+  const [sa, sb] = await startRoom(cs);
+  return { a: cs[0], b: cs[1], code, sa, sb };
 }
 
 test('deck has 52 unique cards, 26 red', () => {
@@ -91,16 +99,59 @@ test('out-of-turn and stale guesses are ignored', async () => {
   } finally { await s.close(); }
 });
 
-test('joining a missing or full room gives a clear error', async () => {
+test('joining a missing, full or started room gives a clear error', async () => {
   const s = await createServer({ port: 0, log: () => {} });
   try {
-    const { a, b, code } = await pair(s.port);
+    const { cs, code } = await room(s.port, ['Ama', 'Kofi', 'Esi', 'Yaw']);
     const c = client(s.port); await c.open();
-    c.send({ t: 'join', code: 'ZZZZ', name: 'Yaw' });
+    c.send({ t: 'join', code: 'ZZZZ', name: 'Abena' });
     assert.match((await c.next('error')).msg, /No room/);
-    c.send({ t: 'join', code, name: 'Yaw' });
+    c.send({ t: 'join', code, name: 'Abena' });
     assert.match((await c.next('error')).msg, /full/);
-    a.ws.close(); b.ws.close(); c.ws.close();
+    const p = await pair(s.port);
+    c.send({ t: 'join', code: p.code, name: 'Abena' });
+    assert.match((await c.next('error')).msg, /already started/);
+    [...cs, c, p.a, p.b].forEach(x => x.ws.close());
+  } finally { await s.close(); }
+});
+
+test('four friends: lobby fills up, only the creator can start, turns go round all four', async () => {
+  const s = await createServer({ port: 0, log: () => {} });
+  try {
+    const { cs } = await room(s.port, ['Ama', 'Kofi', 'Esi', 'Yaw']);
+    const last = await cs[0].next('lobby'); // creator's latest lobby view
+    cs[1].send({ t: 'start' });            // not the creator: ignored
+    await new Promise(r => setTimeout(r, 100));
+    assert.strictEqual(cs[1].inbox.filter(m => m.t === 'start').length, 0);
+    const starts = await startRoom(cs);
+    starts.forEach((st, k) => { assert.deepStrictEqual(st.names, ['Ama', 'Kofi', 'Esi', 'Yaw']); assert.strictEqual(st.you, k); });
+    const seen = new Set([0]);
+    let turn = 0;
+    for (let i = 0; i < 52; i++) {
+      cs[turn].send({ t: 'guess', i, col: i % 2 ? 'r' : 'k' });
+      const rs = await Promise.all(cs.map(c => c.next('result')));
+      rs.forEach(r => assert.deepStrictEqual(r, rs[0]));
+      if (!rs[0].ok && i < 51) assert.strictEqual(rs[0].turn, (turn + 1) % 4);
+      turn = rs[0].turn; seen.add(turn);
+    }
+    assert.strictEqual(seen.size, 4);
+    cs.forEach(c => c.ws.close());
+  } finally { await s.close(); }
+});
+
+test('a friend leaving the lobby updates everyone; leaving mid-game ends it', async () => {
+  const s = await createServer({ port: 0, log: () => {} });
+  try {
+    const { cs } = await room(s.port, ['Ama', 'Kofi', 'Esi']);
+    while (cs[0].inbox.length) cs[0].inbox.pop();
+    cs[2].ws.close();
+    let l;
+    do { l = await cs[0].next('lobby'); } while (l.names.length !== 2);
+    assert.deepStrictEqual(l.names, ['Ama', 'Kofi']);
+    await startRoom([cs[0], cs[1]]);
+    cs[1].ws.close();
+    assert.strictEqual((await cs[0].next('left')).name, 'Kofi');
+    cs[0].ws.close();
   } finally { await s.close(); }
 });
 
@@ -117,15 +168,15 @@ test('when one player leaves, the other is told and the room closes', async () =
   } finally { await s.close(); }
 });
 
-test('rematch starts a fresh deck only when both ask', async () => {
+test('a guest asks for a rematch, the creator starts it', async () => {
   const s = await createServer({ port: 0, log: () => {} });
   try {
     const { a, b } = await pair(s.port);
     const room = [...s.rooms.values()][0];
     room.i = 52; room.over = true;
-    a.send({ t: 'rematch' });
-    await b.next('rematch');
     b.send({ t: 'rematch' });
+    await a.next('rematch');
+    a.send({ t: 'rematch' });
     const [sa, sb] = await Promise.all([a.next('start'), b.next('start')]);
     assert.strictEqual(sa.you, 0); assert.strictEqual(sb.you, 1);
     assert.strictEqual(room.i, 0);

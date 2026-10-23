@@ -1,5 +1,5 @@
 // Tuntum anaa Kɔkɔɔ room server.
-// Two phones share a room by a 4-letter code. The server shuffles the deck and decides every guess,
+// Up to four phones share a room by a 4-letter code. The creator starts the game when friends have joined. The server shuffles the deck and decides every guess,
 // so neither phone ever knows the next card before it is turned over.
 'use strict';
 const http = require('http');
@@ -13,6 +13,7 @@ const ROOM_IDLE_MS = 30 * 60 * 1000;
 const MAX_MSG_BYTES = 512;
 const MAX_MSGS_PER_10S = 60;
 
+const MAX_SEATS = 4;
 const isRed = card => card.endsWith('H') || card.endsWith('D');
 
 function shuffledDeck(rand = crypto.randomInt) {
@@ -48,8 +49,11 @@ function createServer({ port = 8080, log = console.log } = {}) {
     }
   }
 
+  const lobby = room => both(room, { t: 'lobby', code: room.code, names: room.names });
+
   function startMatch(room) {
-    Object.assign(room, { deck: shuffledDeck(), i: 0, turn: 0, scores: [0, 0], over: false, rematch: [false, false] });
+    const n = room.seats.length;
+    Object.assign(room, { deck: shuffledDeck(), i: 0, turn: 0, scores: new Array(n).fill(0), over: false, playing: true });
     room.seats.forEach((ws, k) => send(ws, { t: 'start', code: room.code, names: room.names, you: k, turn: 0 }));
   }
 
@@ -58,11 +62,24 @@ function createServer({ port = 8080, log = console.log } = {}) {
     if (!room) return;
     ws.room = null;
     const k = room.seats.indexOf(ws);
-    if (k >= 0) room.seats[k] = null;
-    const other = room.seats.find(s => s);
-    if (other) send(other, { t: 'left', name: room.names[k] });
-    rooms.delete(room.code); // a room ends when either player leaves
-    if (other) other.room = null;
+    if (k < 0) return;
+    const name = room.names[k];
+    if (room.playing && !room.over) {
+      // someone left mid-game: the game ends for everyone
+      room.seats.forEach((s, j) => { if (j !== k) { send(s, { t: 'left', name }); s.room = null; } });
+      rooms.delete(room.code);
+      return;
+    }
+    room.seats.splice(k, 1);
+    room.names.splice(k, 1);
+    if (!room.seats.length || k === 0) {
+      // the creator left the lobby: close the room
+      room.seats.forEach(s => { send(s, { t: 'left', name }); s.room = null; });
+      rooms.delete(room.code);
+      return;
+    }
+    room.playing = false;
+    lobby(room);
   }
 
   function handle(ws, m) {
@@ -70,23 +87,25 @@ function createServer({ port = 8080, log = console.log } = {}) {
 
     if (m.t === 'create') {
       leave(ws);
-      const room = { code: newCode(), seats: [ws, null], names: [cleanName(m.name), ''], touched: Date.now() };
+      const room = { code: newCode(), seats: [ws], names: [cleanName(m.name)], touched: Date.now(), playing: false };
       rooms.set(room.code, room);
       ws.room = room;
-      return send(ws, { t: 'created', code: room.code });
+      send(ws, { t: 'created', code: room.code });
+      return lobby(room);
     }
 
     if (m.t === 'join') {
       const code = String(m.code ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       const room = rooms.get(code);
       if (!room) return send(ws, { t: 'error', msg: 'No room with that code is open.' });
-      if (room.seats[1]) return send(ws, { t: 'error', msg: 'That room is already full.' });
-      if (room.seats[0] === ws) return send(ws, { t: 'error', msg: "That's your own room." });
+      if (room.seats.includes(ws)) return send(ws, { t: 'error', msg: "You're already in that room." });
+      if (room.playing && !room.over) return send(ws, { t: 'error', msg: 'That game has already started.' });
+      if (room.seats.length >= MAX_SEATS) return send(ws, { t: 'error', msg: 'That room is full (4 players).' });
       leave(ws);
-      room.seats[1] = ws;
-      room.names[1] = cleanName(m.name);
+      room.seats.push(ws);
+      room.names.push(cleanName(m.name));
       ws.room = room;
-      return startMatch(room);
+      return lobby(room);
     }
 
     const room = ws.room;
@@ -94,24 +113,28 @@ function createServer({ port = 8080, log = console.log } = {}) {
     room.touched = Date.now();
     const seat = room.seats.indexOf(ws);
 
+    if (m.t === 'start') {
+      if (seat !== 0 || room.seats.length < 2 || (room.playing && !room.over)) return;
+      return startMatch(room);
+    }
+
     if (m.t === 'guess') {
-      if (!room.deck || room.over || !room.seats[1]) return;
+      if (!room.playing || !room.deck || room.over) return;
       if (seat !== room.turn || m.i !== room.i || (m.col !== 'r' && m.col !== 'k')) return; // stale or out of turn: ignore
       const card = room.deck[room.i];
       const ok = isRed(card) === (m.col === 'r');
       const i = room.i++;
       if (ok) room.scores[seat]++;
       if (room.i >= room.deck.length) room.over = true;
-      else if (!ok) room.turn = 1 - room.turn;
+      else if (!ok) room.turn = (room.turn + 1) % room.seats.length;
       return both(room, { t: 'result', i, col: m.col, card, ok, turn: room.turn });
     }
 
     if (m.t === 'rematch') {
+      // the creator restarts; anyone else asks the creator
       if (!room.over) return;
-      room.rematch[seat] = true;
-      if (room.rematch[0] && room.rematch[1]) return startMatch(room);
-      const other = room.seats[1 - seat];
-      return send(other, { t: 'rematch', name: room.names[seat] });
+      if (seat === 0) return startMatch(room);
+      return send(room.seats[0], { t: 'rematch', name: room.names[seat] });
     }
   }
 

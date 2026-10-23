@@ -370,17 +370,19 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
   <h2>Play Online</h2>
   <div class="panel" id="hostPanel">
     <h3>START A ROOM</h3>
-    <p>You get a 4-letter code. Your friend opens the game, taps Play Online and types the code.</p>
+    <p>You get a 4-letter code. Up to 3 friends open the game, tap Online and type it. You start when everyone's in.</p>
     <button class="btn b-red" id="create">Create room</button>
   </div>
   <div class="panel" id="waitPanel" hidden>
-    <h3>YOUR ROOM CODE</h3>
+    <h3>ROOM CODE</h3>
     <div class="code" id="code">····</div>
     <button class="btn b-white" id="copy">Copy code</button>
-    <div class="wait"><i></i><i></i><i></i><span>Waiting for your friend</span></div>
+    <div class="lobby" id="onLobby"></div>
+    <button class="btn b-red" id="onStart" disabled>Waiting for friends…</button>
+    <div class="wait" id="onWait" hidden><i></i><i></i><i></i><span>Waiting for the host to start</span></div>
   </div>
   <div class="panel" id="joinPanel">
-    <h3>JOIN A FRIEND</h3>
+    <h3>JOIN FRIENDS</h3>
     <div class="joinrow">
       <input id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code">
       <button class="btn b-blue" id="join">Join</button>
@@ -744,7 +746,8 @@ function finish(){
   cells[0].textContent=`🔥 ${bestN} · ${bestP.length>1?bestP.map(p=>p.name).join(', '):bestP[0].name}`;
   cells[1].textContent=G.p.map(p=>`${p.name} ${acc(p)}`).join(' · ');
   const guest=G.mode==='nearby'&&!NB.host;
-  $('#again').textContent=G.mode==='online'?'↻  Ask for a rematch':guest?'Waiting for the host…':'↻  Play again';
+  const onHost=G.mode==='online'&&G.me===0;
+  $('#again').textContent=G.mode==='online'?(onHost?'↻  Play again':'↻  Ask for a rematch'):guest?'Waiting for the host…':'↻  Play again';
   $('#again').disabled=guest;
   show('end');
   if(meIdx>=0&&!winners.includes(meIdx))sfx.wrong();else{sfx.win();cheer(2.6,1.3);confetti(220,{x:innerWidth/2,y:innerHeight*.3})}
@@ -754,7 +757,7 @@ function finish(){
 /* ---------- online: WebSocket link to the Tuntum room server (Server/ in this repo) ---------- */
 // The server shuffles the deck and decides every guess, so neither phone can peek.
 const SERVER=(()=>{try{return localStorage.getItem('tak-server')||''}catch(e){return''}})()||'wss://tuntum-anaa-kokoo.fly.dev';
-const NET={ws:null,code:'',names:null};
+const NET={ws:null,code:'',names:null,seat:null};
 function note(t,err){const n=$('#onNote');n.textContent=t;n.className='note'+(err?' err':'')}
 function netSend(m){if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(m))}
 const SUIT_OF={S:['♠','k'],C:['♣','k'],H:['♥','r'],D:['♦','r']};
@@ -769,12 +772,28 @@ function connect(then){
   NET.ws.onclose=()=>{if(opened&&G&&G.mode==='online'&&!G.over)gone('Connection lost','The game has ended.');NET.ws=null};
   NET.ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}onNet(m)};
 }
+function renderOnLobby(names){
+  NET.names=names;
+  $('#onLobby').innerHTML=[0,1,2,3].map(k=>`<div class="${names[k]?'':'empty-seat'}"><span class="av" style="background:${PCOL[k]}"></span><span></span></div>`).join('');
+  document.querySelectorAll('#onLobby > div').forEach((el,k)=>{el.querySelector('.av').textContent=names[k]?names[k][0].toUpperCase():'';
+    el.lastChild.textContent=names[k]?names[k]+(k===NET.seat?' (you)':''):'Waiting…'});
+  const host=NET.seat===0;
+  $('#onStart').hidden=!host;$('#onWait').hidden=host;
+  $('#onStart').disabled=names.length<2;$('#onStart').textContent=names.length<2?'Waiting for friends…':`Start game (${names.length} players)`;
+}
 function onNet(m){
-  if(m.t==='created'){NET.code=m.code;$('#code').textContent=m.code;$('#hostPanel').hidden=true;$('#joinPanel').hidden=true;$('#waitPanel').hidden=false;note('Room open. Share the code.')}
-  else if(m.t==='start'){if(!Array.isArray(m.names)||(m.you!==0&&m.you!==1))return;sfx.join();start('online',{deck:null,me:m.you,names:m.names.map(cleanName)})}
+  if(m.t==='created'){NET.code=m.code;NET.seat=0;$('#code').textContent=m.code;$('#hostPanel').hidden=true;$('#joinPanel').hidden=true;$('#waitPanel').hidden=false;note('Room open. Send the code to up to 3 friends.')}
+  else if(m.t==='lobby'&&Array.isArray(m.names)){
+    const list=m.names.map(cleanName);
+    if(NET.seat==null){NET.seat=list.length-1;NET.code=m.code||NET.code;$('#code').textContent=NET.code;$('#hostPanel').hidden=true;$('#joinPanel').hidden=true;$('#waitPanel').hidden=false;$('#copy').hidden=true}
+    if(list.length>(NET.names||[]).length&&NET.names)sfx.join();
+    renderOnLobby(list);
+    if(!$('#online').hidden)note(NET.seat===0?(list.length<2?'Room open. Send the code to up to 3 friends.':'Tap Start when everyone is in.'):'You’re in! Waiting for the host to start.');
+  }
+  else if(m.t==='start'){if(!Array.isArray(m.names)||m.names.length<2||m.names.length>4||!Number.isInteger(m.you))return;NET.seat=m.you;sfx.join();start('online',{deck:null,me:m.you,names:m.names.map(cleanName)})}
   else if(m.t==='result'){if(!G||G.mode!=='online')return;const card=parseCard(m.card);if(!card||typeof m.i!=='number'||m.i<G.i)return;enqueue({i:m.i,col:m.col,card,ok:!!m.ok})}
-  else if(m.t==='rematch'){if(!$('#end').hidden)$('#again').textContent=`${cleanName(m.name)} wants a rematch!`}
-  else if(m.t==='left'){if(G&&G.mode==='online')gone(`${cleanName(m.name)} left`,'The game has ended.')}
+  else if(m.t==='rematch'){if(!$('#end').hidden&&NET.seat===0)$('#again').textContent=`${cleanName(m.name)} wants a rematch · Play again`}
+  else if(m.t==='left'){if(G&&G.mode==='online'&&!G.over)gone(`${cleanName(m.name)} left`,'The game has ended.');else if(!$('#online').hidden){note(`${cleanName(m.name)} closed the room.`,true);NET.seat=null;openOnline()}}
   else if(m.t==='error'){if(!$('#online').hidden)note(m.msg||'Something went wrong.',true)}
 }
 function gone(title,sub){
@@ -784,6 +803,7 @@ function gone(title,sub){
 }
 function leaveRoom(){if(NET.ws){const w=NET.ws;NET.ws=null;try{w.close()}catch(e){}}}
 function openOnline(){
+  leaveRoom();NET.seat=null;NET.names=null;$('#copy').hidden=false;
   show('online');$('#hostPanel').hidden=false;$('#joinPanel').hidden=false;$('#waitPanel').hidden=true;$('#joinCode').value='';
   note('Play a friend on another phone in real time.');
 }
@@ -957,6 +977,7 @@ setCount(playerCount);
 $('#onBack').onclick=()=>{sfx.click();goHome()};
 $('#create').onclick=()=>{sfx.click();connect(()=>netSend({t:'create',name:cleanName(names()[0])}))};
 $('#join').onclick=()=>{sfx.click();const c=$('#joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==4){note('Type the 4-letter code from your friend.',true);return}connect(()=>{note('Joining '+c+'…');netSend({t:'join',code:c,name:cleanName(names()[0])})})};
+$('#onStart').onclick=()=>{sfx.click();netSend({t:'start'})};
 $('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#join').click()});
 $('#copy').onclick=()=>{const t=NET.code;const ok=()=>{$('#copy').textContent='Copied';setTimeout(()=>$('#copy').textContent='Copy code',1500)};
   try{navigator.clipboard.writeText(t).then(ok,()=>selectCode())}catch(e){selectCode()}};
@@ -966,7 +987,7 @@ $('#gR').onclick=()=>pick('r');
 $('#mute').onclick=()=>{setMute(!muted);if(!muted){audio();sfx.click()}};
 $('#quit').onclick=()=>{sfx.click();goHome()};
 $('#again').onclick=()=>{sfx.click();if(G.mode==='nearby'){if(NB.host)hostStartGame();return}if(G.mode!=='online')return start(G.mode);
-  netSend({t:'rematch'});$('#again').textContent='Rematch asked…'};
+  netSend({t:'rematch'});if(G.me!==0)$('#again').textContent='Asked the host…'};
 $('#home2').onclick=()=>{sfx.click();goHome()};
 addEventListener('keydown',e=>{if($('#game').hidden||!G||e.target.tagName==='INPUT')return;const k=e.key.toLowerCase();
   if(k==='b'||k==='arrowleft')pick('k');if(k==='r'||k==='arrowright')pick('r')});
