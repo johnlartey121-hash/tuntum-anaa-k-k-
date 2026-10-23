@@ -1,4 +1,4 @@
-// Plays a short 4-player game against the live server. Usage: node test/live-check.js wss://tuntum-anaa-kokoo.fly.dev
+// Plays a short 4-player game against the live server. Usage: node tools/live-check.js wss://tuntum-anaa-kokoo.fly.dev
 'use strict';
 const WebSocket = require('ws');
 const url = process.argv[2];

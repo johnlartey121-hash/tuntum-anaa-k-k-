@@ -37,5 +37,5 @@ jobs:
         working-directory: Server
         run: |
           npm install --no-audit --no-fund
-          node test/live-check.js wss://tuntum-anaa-kokoo.fly.dev
+          node tools/live-check.js wss://tuntum-anaa-kokoo.fly.dev
           flyctl status --app tuntum-anaa-kokoo || true

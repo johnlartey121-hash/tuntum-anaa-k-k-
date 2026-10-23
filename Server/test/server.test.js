@@ -115,6 +115,20 @@ test('joining a missing, full or started room gives a clear error', async () => 
   } finally { await s.close(); }
 });
 
+test('a room made for 3 players turns away a 4th', async () => {
+  const s = await createServer({ port: 0, log: () => {} });
+  try {
+    const cs = [client(s.port), client(s.port), client(s.port), client(s.port)];
+    await Promise.all(cs.map(c => c.open()));
+    cs[0].send({ t: 'create', name: 'Ama', max: 3 });
+    const { code } = await cs[0].next('created');
+    cs[1].send({ t: 'join', code, name: 'Kofi' }); assert.strictEqual((await cs[1].next('lobby')).max, 3);
+    cs[2].send({ t: 'join', code, name: 'Esi' }); await cs[2].next('lobby');
+    cs[3].send({ t: 'join', code, name: 'Yaw' }); assert.match((await cs[3].next('error')).msg, /full \(3 players\)/);
+    cs.forEach(c => c.ws.close());
+  } finally { await s.close(); }
+});
+
 test('four friends: lobby fills up, only the creator can start, turns go round all four', async () => {
   const s = await createServer({ port: 0, log: () => {} });
   try {

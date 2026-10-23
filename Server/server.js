@@ -49,7 +49,7 @@ function createServer({ port = 8080, log = console.log } = {}) {
     }
   }
 
-  const lobby = room => both(room, { t: 'lobby', code: room.code, names: room.names });
+  const lobby = room => both(room, { t: 'lobby', code: room.code, names: room.names, max: room.max });
 
   function startMatch(room) {
     const n = room.seats.length;
@@ -87,7 +87,8 @@ function createServer({ port = 8080, log = console.log } = {}) {
 
     if (m.t === 'create') {
       leave(ws);
-      const room = { code: newCode(), seats: [ws], names: [cleanName(m.name)], touched: Date.now(), playing: false };
+      const max = Math.min(MAX_SEATS, Math.max(2, Number(m.max) || MAX_SEATS));
+      const room = { code: newCode(), seats: [ws], names: [cleanName(m.name)], max, touched: Date.now(), playing: false };
       rooms.set(room.code, room);
       ws.room = room;
       send(ws, { t: 'created', code: room.code });
@@ -100,7 +101,7 @@ function createServer({ port = 8080, log = console.log } = {}) {
       if (!room) return send(ws, { t: 'error', msg: 'No room with that code is open.' });
       if (room.seats.includes(ws)) return send(ws, { t: 'error', msg: "You're already in that room." });
       if (room.playing && !room.over) return send(ws, { t: 'error', msg: 'That game has already started.' });
-      if (room.seats.length >= MAX_SEATS) return send(ws, { t: 'error', msg: 'That room is full (4 players).' });
+      if (room.seats.length >= room.max) return send(ws, { t: 'error', msg: `That room is full (${room.max} players).` });
       leave(ws);
       room.seats.push(ws);
       room.names.push(cleanName(m.name));

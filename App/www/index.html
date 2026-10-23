@@ -369,8 +369,8 @@ h1 .r{color:var(--red);-webkit-text-stroke:2px var(--ink);paint-order:stroke fil
   <div class="top"><button class="round" id="onBack" aria-label="Back to home">✕</button></div>
   <h2>Play Online</h2>
   <div class="panel" id="hostPanel">
-    <h3>START A ROOM</h3>
-    <p>You get a 4-letter code. Up to 3 friends open the game, tap Online and type it. You start when everyone's in.</p>
+    <h3>START A ROOM · UP TO 4 PLAYERS</h3>
+    <p>Play with up to 3 friends (4 players). You get a 4-letter code; friends open the game, tap Online and type it. You start when everyone's in.</p>
     <button class="btn b-red" id="create">Create room</button>
   </div>
   <div class="panel" id="waitPanel" hidden>
@@ -774,17 +774,18 @@ function connect(then){
 }
 function renderOnLobby(names){
   NET.names=names;
-  $('#onLobby').innerHTML=[0,1,2,3].map(k=>`<div class="${names[k]?'':'empty-seat'}"><span class="av" style="background:${PCOL[k]}"></span><span></span></div>`).join('');
+  const max=NET.max||4;
+  $('#onLobby').innerHTML=[0,1,2,3].slice(0,max).map(k=>`<div class="${names[k]?'':'empty-seat'}"><span class="av" style="background:${PCOL[k]}"></span><span></span></div>`).join('');
   document.querySelectorAll('#onLobby > div').forEach((el,k)=>{el.querySelector('.av').textContent=names[k]?names[k][0].toUpperCase():'';
     el.lastChild.textContent=names[k]?names[k]+(k===NET.seat?' (you)':''):'Waiting…'});
   const host=NET.seat===0;
   $('#onStart').hidden=!host;$('#onWait').hidden=host;
-  $('#onStart').disabled=names.length<2;$('#onStart').textContent=names.length<2?'Waiting for friends…':`Start game (${names.length} players)`;
+  $('#onStart').disabled=names.length<2;$('#onStart').textContent=names.length<2?'Waiting for friends…':names.length<max?`Start now with ${names.length} (or wait for ${max})`:`Start game (${names.length} players)`;
 }
 function onNet(m){
   if(m.t==='created'){NET.code=m.code;NET.seat=0;$('#code').textContent=m.code;$('#hostPanel').hidden=true;$('#joinPanel').hidden=true;$('#waitPanel').hidden=false;note('Room open. Send the code to up to 3 friends.')}
   else if(m.t==='lobby'&&Array.isArray(m.names)){
-    const list=m.names.map(cleanName);
+    const list=m.names.map(cleanName);NET.max=Math.min(4,Math.max(2,+m.max||4));
     if(NET.seat==null){NET.seat=list.length-1;NET.code=m.code||NET.code;$('#code').textContent=NET.code;$('#hostPanel').hidden=true;$('#joinPanel').hidden=true;$('#waitPanel').hidden=false;$('#copy').hidden=true}
     if(list.length>(NET.names||[]).length&&NET.names)sfx.join();
     renderOnLobby(list);
@@ -805,7 +806,7 @@ function leaveRoom(){if(NET.ws){const w=NET.ws;NET.ws=null;try{w.close()}catch(e
 function openOnline(){
   leaveRoom();NET.seat=null;NET.names=null;$('#copy').hidden=false;
   show('online');$('#hostPanel').hidden=false;$('#joinPanel').hidden=false;$('#waitPanel').hidden=true;$('#joinCode').value='';
-  note('Play a friend on another phone in real time.');
+  note('Play up to 3 friends on their own phones, anywhere.');
 }
 function goHome(){G=null;$('#turnSheet').hidden=true;leaveRoom();nbStop();show('home')}
 /* ---------- nearby: phones on one hotspot, no internet ----------
@@ -944,14 +945,15 @@ const MODE_NAME={cpu:'vs Computer',pass:'Pass & Play',nearby:'Nearby',online:'On
 let setupMode='pass';
 function openSetup(mode){
   setupMode=mode;$('#setMode').textContent=MODE_NAME[mode];
-  const solo=mode==='online'||mode==='nearby';
-  $('#countWrap').hidden=solo;$('#setTitle').textContent=solo?"What's your name?":"Who's playing?";
-  $('#namesLab').textContent=solo?'YOUR NAME':'NAMES';$('#setGo').innerHTML=solo?'Continue&nbsp; →':'▶&nbsp; Start game';
+  const solo=mode==='nearby',online=mode==='online';
+  $('#countWrap').hidden=solo;$('#countWrap .lab').textContent=online?'HOW MANY PLAYERS? (YOU + FRIENDS)':'PLAYERS';$('#setTitle').textContent=solo?"What's your name?":online?'Play with friends':"Who's playing?";
+  $('#namesLab').textContent=solo||online?'YOUR NAME':'NAMES';$('#setGo').innerHTML=solo||online?'Continue&nbsp; →':'▶&nbsp; Start game';
   setCount(playerCount);show('setup');
 }
 function setCount(n){playerCount=n;try{localStorage.setItem('tak-count',n)}catch(e){}
   document.querySelectorAll('.count button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
   const solo=setupMode==='online'||setupMode==='nearby',shown=solo?1:n;
+  $('#create')&&($('#create').textContent=`Create room for ${n}`);
   [2,3,4].forEach(k=>{const lab=$('label[for=n'+k+']');lab.hidden=k>shown;const cpu=setupMode==='cpu';
     lab.querySelector('input').hidden=cpu;const c=lab.querySelector('.cpu');c.hidden=!cpu;c.textContent=n>2?CPU_NAMES[k-2]:'Computer'})}
 function saveNames(){try{localStorage.setItem('tak-names',JSON.stringify(names()))}catch(e){}}
@@ -975,7 +977,7 @@ addEventListener('resize',fitHome);fitHome();
 document.querySelectorAll('.count button').forEach(b=>b.onclick=()=>{sfx.click();setCount(+b.dataset.n)});
 setCount(playerCount);
 $('#onBack').onclick=()=>{sfx.click();goHome()};
-$('#create').onclick=()=>{sfx.click();connect(()=>netSend({t:'create',name:cleanName(names()[0])}))};
+$('#create').onclick=()=>{sfx.click();connect(()=>netSend({t:'create',name:cleanName(names()[0]),max:playerCount}))};
 $('#join').onclick=()=>{sfx.click();const c=$('#joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==4){note('Type the 4-letter code from your friend.',true);return}connect(()=>{note('Joining '+c+'…');netSend({t:'join',code:c,name:cleanName(names()[0])})})};
 $('#onStart').onclick=()=>{sfx.click();netSend({t:'start'})};
 $('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#join').click()});
